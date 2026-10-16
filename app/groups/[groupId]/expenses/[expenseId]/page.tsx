@@ -41,7 +41,8 @@ async function Expense({ params }: ExpenseParams) {
   }
   const people = new Map(members.map((person) => [person.id, person]));
   const nameOf = (id: string) => people.get(id)?.display_name ?? strings.activity.someone;
-  const splits = [...expense.expense_splits].sort((a, b) => nameOf(a.user_id).localeCompare(nameOf(b.user_id), "pt-BR"));
+  const byName = (a: string, b: string) => a.localeCompare(b, "pt-BR");
+  const splits = [...expense.expense_splits].sort((a, b) => byName(nameOf(a.user_id), nameOf(b.user_id)));
   const facts = [
     [strings.expense.paidBy, nameOf(expense.payer_id)],
     [strings.expense.date, formatDate(expense.expense_date)],
@@ -63,6 +64,27 @@ async function Expense({ params }: ExpenseParams) {
           </div>
         ))}
       </dl>
+      {expense.expense_items.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <h3 className="font-semibold">{strings.expense.items}</h3>
+          <ul className="flex flex-col divide-y divide-neutral-100">
+            {expense.expense_items.map((item) => (
+              <li key={item.position} className="flex min-h-11 items-center gap-3 py-2">
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="break-words">{item.description}</span>
+                  <span className="text-sm text-neutral-500">
+                    {item.expense_item_participants
+                      .map((participant) => nameOf(participant.user_id))
+                      .sort(byName)
+                      .join(", ")}
+                  </span>
+                </div>
+                <span className="shrink-0 tabular-nums">{formatBRL(item.amount_cents)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <section className="flex flex-col gap-2">
         <h3 className="font-semibold">{strings.expense.shares}</h3>
         <ul className="flex flex-col divide-y divide-neutral-100">

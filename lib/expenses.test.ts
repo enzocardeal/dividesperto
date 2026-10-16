@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   buildExpensePayload,
+  computeItemSplits,
   computeSplits,
   expenseErrorMessage,
   formatPercent,
@@ -111,6 +112,35 @@ test("every computed split sums to the total", () => {
   }
 });
 
+test("items 60 (Ana, Bia) and 40 (Bia) with a total of 110 give Ana 33,00 and Bia 77,00", () => {
+  const result = computeItemSplits(11000, [
+    { amountCents: 6000, participantIds: [ana, bia] },
+    { amountCents: 4000, participantIds: [bia] },
+  ]);
+  assert.equal(result.error, null);
+  assert.deepEqual(result.splits, [
+    { userId: ana, amountCents: 3300, weight: null },
+    { userId: bia, amountCents: 7700, weight: null },
+  ]);
+});
+
+test("items above the total act as a proportional discount", () => {
+  const result = computeItemSplits(9000, [
+    { amountCents: 6000, participantIds: [ana, bia] },
+    { amountCents: 4000, participantIds: [bia] },
+  ]);
+  assert.deepEqual(amounts(result.splits), { [ana]: 2700, [bia]: 6300 });
+});
+
+test("computeItemSplits refuses a missing item, amount or participant with a pt-BR message", () => {
+  const item = { amountCents: 1000, participantIds: [ana] };
+  assert.equal(computeItemSplits(1000, []).error, strings.expenseForm.addItemFirst);
+  assert.equal(computeItemSplits(0, [item]).error, strings.expenseForm.invalidAmount);
+  assert.equal(computeItemSplits(1000, [item, { ...item, amountCents: null }]).error, strings.expenseForm.itemAmountPositive);
+  assert.equal(computeItemSplits(1000, [{ ...item, amountCents: 0 }]).error, strings.expenseForm.itemAmountPositive);
+  assert.equal(computeItemSplits(1000, [{ ...item, participantIds: [] }]).error, strings.expenseForm.chooseItemParticipants);
+});
+
 test("parsePercent reads up to two decimals and caps at 100%", () => {
   assert.equal(parsePercent("50"), 5000);
   assert.equal(parsePercent("33,33"), 3333);
@@ -153,6 +183,8 @@ test("parseDescription trims and accepts 1 to 120 characters", () => {
   assert.equal(parseDescription("  Jantar "), "Jantar");
   assert.equal(parseDescription("x".repeat(120)), "x".repeat(120));
   assert.equal(parseDescription("x".repeat(121)), null);
+  assert.equal(parseDescription("x".repeat(80), 80), "x".repeat(80));
+  assert.equal(parseDescription("x".repeat(81), 80), null);
   assert.equal(parseDescription("  "), null);
   assert.equal(parseDescription(null), null);
 });
@@ -214,7 +246,8 @@ test("buildExpensePayload refuses invalid fields with a pt-BR message", () => {
     [{ ...base, date: "2026-02-30" }, strings.expenseForm.invalidDate],
     [{ ...base, payerId: "" }, strings.expenseForm.choosePayer],
     [{ ...base, participantIds: [] }, strings.expenseForm.chooseParticipants],
-    [{ ...base, method: "items" }, strings.errors.generic],
+    [{ ...base, method: "items" }, strings.expenseForm.addItemFirst],
+    [{ ...base, method: "split" }, strings.errors.generic],
     [{ ...base, category: "travel" }, strings.errors.generic],
     [{ ...base, groupId: "x" }, strings.errors.generic],
     [{ ...base, participantIds: [ana, ana] }, strings.errors.generic],
@@ -222,6 +255,61 @@ test("buildExpensePayload refuses invalid fields with a pt-BR message", () => {
   ];
   for (const [fields, error] of cases) {
     assert.deepEqual(buildExpensePayload(form(fields)), { payload: null, error });
+  }
+});
+
+const itemized = {
+  ...base,
+  amount: "110,00",
+  method: "items",
+  itemKeys: ["0", "3"],
+  "item:0:description": "Pizza",
+  "item:0:amount": "60,00",
+  "item:0:participantIds": [ana, bia],
+  "item:3:description": "  Vinho ",
+  "item:3:amount": "40,00",
+  "item:3:participantIds": [bia],
+};
+
+test("buildExpensePayload builds items and their splits and ignores the top-level participants", () => {
+  const result = buildExpensePayload(form(itemized));
+  assert.equal(result.error, null);
+  assert.equal(result.payload?.split_method, "items");
+  assert.equal(result.payload?.amount_cents, 11000);
+  assert.deepEqual(result.payload?.splits, [
+    { user_id: ana, amount_cents: 3300, weight: null },
+    { user_id: bia, amount_cents: 7700, weight: null },
+  ]);
+  assert.deepEqual(result.payload?.items, [
+    { description: "Pizza", amount_cents: 6000, participant_ids: [ana, bia] },
+    { description: "Vinho", amount_cents: 4000, participant_ids: [bia] },
+  ]);
+});
+
+test("buildExpensePayload sends no items for the other methods", () => {
+  const result = buildExpensePayload(form({ ...itemized, method: "equal", participantIds: [ana, bia] }));
+  assert.deepEqual(result.payload?.items, []);
+  assert.deepEqual(result.payload?.splits, [
+    { user_id: ana, amount_cents: 5500, weight: null },
+    { user_id: bia, amount_cents: 5500, weight: null },
+  ]);
+});
+
+test("buildExpensePayload refuses invalid items", () => {
+  const cases: [Record<string, string | string[]>, string][] = [
+    [{ ...itemized, itemKeys: [] }, strings.expenseForm.addItemFirst],
+    [{ ...itemized, itemKeys: ["0", "x"] }, strings.errors.generic],
+    [{ ...itemized, itemKeys: ["0", "0"] }, strings.errors.generic],
+    [{ ...itemized, "item:3:participantIds": [bia, bia] }, strings.errors.generic],
+    [{ ...itemized, "item:3:participantIds": ["x"] }, strings.errors.generic],
+    [{ ...itemized, "item:3:description": " " }, strings.expenseForm.invalidItemDescription],
+    [{ ...itemized, "item:3:description": "x".repeat(81) }, strings.expenseForm.invalidItemDescription],
+    [{ ...itemized, "item:3:amount": "0" }, strings.expenseForm.itemAmountPositive],
+    [{ ...itemized, "item:3:amount": "" }, strings.expenseForm.itemAmountPositive],
+    [{ ...itemized, "item:3:participantIds": [] }, strings.expenseForm.chooseItemParticipants],
+  ];
+  for (const [fields, error] of cases) {
+    assert.deepEqual(buildExpensePayload(form(fields)), { payload: null, error }, JSON.stringify(fields));
   }
 });
 

@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { isFormSplitMethod } from "@/lib/expenses";
 import { todayInSaoPaulo } from "@/lib/money/format";
 import { strings } from "@/lib/strings";
 import { getCurrentUserId, getExpense, getGroup, getGroupPeople } from "../../../../data";
@@ -27,7 +26,7 @@ async function EditExpense({ params }: EditParams) {
     getGroupPeople(group.id),
     getCurrentUserId(),
   ]);
-  if (!expense || !isFormSplitMethod(expense.split_method)) {
+  if (!expense) {
     notFound();
   }
 
@@ -54,6 +53,11 @@ async function EditExpense({ params }: EditParams) {
               userId: split.user_id,
               amountCents: split.amount_cents,
               weight: split.weight,
+            })),
+            items: expense.expense_items.map((item) => ({
+              description: item.description,
+              amountCents: item.amount_cents,
+              participantIds: item.expense_item_participants.map((participant) => participant.user_id),
             })),
           }}
         />

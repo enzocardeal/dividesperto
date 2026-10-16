@@ -1,17 +1,18 @@
 import { isCategory, type Category } from "./categories.ts";
 import { isUuid } from "./groups.ts";
-import { allocate } from "./money/allocate.ts";
+import { allocate, allocateItems, type Item } from "./money/allocate.ts";
 import { formatBRL } from "./money/format.ts";
 import { centsToBRLInput } from "./money/input.ts";
 import { parseBRL } from "./money/parse.ts";
 import { strings } from "./strings.ts";
 
 export const DESCRIPTION_MAX = 120;
+export const ITEM_DESCRIPTION_MAX = 80;
 export const PERCENT_TOTAL = 10000;
-export const FORM_SPLIT_METHODS = ["equal", "exact", "percent", "shares"] as const;
+export const SPLIT_METHODS = ["equal", "exact", "percent", "shares", "items"] as const;
 
-export type FormSplitMethod = (typeof FORM_SPLIT_METHODS)[number];
-export type SplitMethod = FormSplitMethod | "items";
+export type SplitMethod = (typeof SPLIT_METHODS)[number];
+export type ParticipantSplitMethod = Exclude<SplitMethod, "items">;
 
 export type Split = {
   userId: string;
@@ -21,6 +22,11 @@ export type Split = {
 
 export type SplitResult = { splits: Split[]; error: null } | { splits: null; error: string };
 
+export type ItemInput = {
+  amountCents: number | null;
+  participantIds: readonly string[];
+};
+
 export type ExpensePayload = {
   id: string | null;
   group_id: string;
@@ -28,17 +34,21 @@ export type ExpensePayload = {
   amount_cents: number;
   expense_date: string;
   payer_id: string;
-  split_method: FormSplitMethod;
+  split_method: SplitMethod;
   category: Category | null;
   splits: { user_id: string; amount_cents: number; weight: number | null }[];
-  items: never[];
+  items: { description: string; amount_cents: number; participant_ids: string[] }[];
 };
 
 export type PayloadResult = { payload: ExpensePayload; error: null } | { payload: null; error: string };
 
+type PayloadItem = ExpensePayload["items"][number];
+type ItemsResult = { items: PayloadItem[]; error: null } | { items: null; error: string };
+
 const PERCENT_PATTERN = /^(\d{1,3})(?:[,.](\d{1,2}))?$/;
 const SHARES_PATTERN = /^\d{1,4}$/;
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+const ITEM_KEY_PATTERN = /^\d{1,4}$/;
 
 const RPC_ERRORS = new Map<string | undefined, string>([
   ["42501", strings.errors.notMember],
@@ -55,8 +65,13 @@ function total(values: readonly number[]): number {
   return values.reduce((sum, value) => sum + value, 0);
 }
 
-export function isFormSplitMethod(value: unknown): value is FormSplitMethod {
-  return FORM_SPLIT_METHODS.includes(value as FormSplitMethod);
+function formText(form: FormData, name: string): string {
+  const value = form.get(name);
+  return typeof value === "string" ? value : "";
+}
+
+export function isSplitMethod(value: unknown): value is SplitMethod {
+  return SPLIT_METHODS.includes(value as SplitMethod);
 }
 
 export function splitMethodLabel(value: unknown): string | null {
@@ -65,13 +80,13 @@ export function splitMethodLabel(value: unknown): string | null {
     : null;
 }
 
-export function parseDescription(value: unknown): string | null {
+export function parseDescription(value: unknown, max = DESCRIPTION_MAX): string | null {
   if (typeof value !== "string") {
     return null;
   }
   const description = value.trim();
   const length = [...description].length;
-  return length >= 1 && length <= DESCRIPTION_MAX ? description : null;
+  return length >= 1 && length <= max ? description : null;
 }
 
 export function isISODate(value: unknown): value is string {
@@ -103,7 +118,7 @@ export function parseShares(text: string): number | null {
   return SHARES_PATTERN.test(trimmed) ? Number(trimmed) : null;
 }
 
-export function parseSplitValue(method: FormSplitMethod, text: string): number | null {
+export function parseSplitValue(method: ParticipantSplitMethod, text: string): number | null {
   switch (method) {
     case "exact":
       return parseBRL(text);
@@ -116,7 +131,7 @@ export function parseSplitValue(method: FormSplitMethod, text: string): number |
   }
 }
 
-export function splitValueText(method: FormSplitMethod, split: Split): string {
+export function splitValueText(method: ParticipantSplitMethod, split: Split): string {
   switch (method) {
     case "exact":
       return centsToBRLInput(split.amountCents);
@@ -130,7 +145,7 @@ export function splitValueText(method: FormSplitMethod, split: Split): string {
 }
 
 export function computeSplits(
-  method: FormSplitMethod,
+  method: ParticipantSplitMethod,
   amountCents: number,
   participantIds: readonly string[],
   values: ReadonlyMap<string, number | null>,
@@ -181,11 +196,61 @@ export function computeSplits(
   };
 }
 
-export function buildExpensePayload(form: FormData): PayloadResult {
-  const text = (name: string) => {
-    const value = form.get(name);
-    return typeof value === "string" ? value : "";
+export function computeItemSplits(amountCents: number, items: readonly ItemInput[]): SplitResult {
+  if (!Number.isSafeInteger(amountCents) || amountCents <= 0) {
+    return fail(strings.expenseForm.invalidAmount);
+  }
+  if (items.length === 0) {
+    return fail(strings.expenseForm.addItemFirst);
+  }
+  const valid: Item[] = [];
+  for (const { amountCents: itemCents, participantIds } of items) {
+    if (itemCents === null || !Number.isSafeInteger(itemCents) || itemCents <= 0) {
+      return fail(strings.expenseForm.itemAmountPositive);
+    }
+    if (participantIds.length === 0) {
+      return fail(strings.expenseForm.chooseItemParticipants);
+    }
+    valid.push({ amountCents: itemCents, participantIds });
+  }
+
+  const shares = allocateItems(amountCents, valid);
+  return {
+    splits: [...shares].map(([userId, cents]) => ({ userId, amountCents: cents, weight: null })),
+    error: null,
   };
+}
+
+function readItems(form: FormData): ItemsResult {
+  const keys = form.getAll("itemKeys");
+  if (
+    !keys.every((key): key is string => typeof key === "string" && ITEM_KEY_PATTERN.test(key)) ||
+    new Set(keys).size !== keys.length
+  ) {
+    return { items: null, error: strings.errors.generic };
+  }
+
+  const items: PayloadItem[] = [];
+  for (const key of keys) {
+    const participantIds = form.getAll(`item:${key}:participantIds`);
+    if (!participantIds.every(isUuid) || new Set(participantIds).size !== participantIds.length) {
+      return { items: null, error: strings.errors.generic };
+    }
+    const description = parseDescription(formText(form, `item:${key}:description`), ITEM_DESCRIPTION_MAX);
+    if (description === null) {
+      return { items: null, error: strings.expenseForm.invalidItemDescription };
+    }
+    const amountCents = parseBRL(formText(form, `item:${key}:amount`));
+    if (amountCents === null || amountCents <= 0) {
+      return { items: null, error: strings.expenseForm.itemAmountPositive };
+    }
+    items.push({ description, amount_cents: amountCents, participant_ids: participantIds });
+  }
+  return { items, error: null };
+}
+
+export function buildExpensePayload(form: FormData): PayloadResult {
+  const text = (name: string) => formText(form, name);
   const reject = (error: string): PayloadResult => ({ payload: null, error });
 
   const groupId = text("groupId");
@@ -196,7 +261,7 @@ export function buildExpensePayload(form: FormData): PayloadResult {
   if (
     !isUuid(groupId) ||
     (expenseId !== "" && !isUuid(expenseId)) ||
-    !isFormSplitMethod(method) ||
+    !isSplitMethod(method) ||
     (category !== "" && !isCategory(category)) ||
     !participantIds.every(isUuid) ||
     new Set(participantIds).size !== participantIds.length
@@ -221,8 +286,22 @@ export function buildExpensePayload(form: FormData): PayloadResult {
     return reject(strings.expenseForm.choosePayer);
   }
 
-  const values = new Map(participantIds.map((id) => [id, parseSplitValue(method, text(`value:${id}`))]));
-  const result = computeSplits(method, amountCents, participantIds, values);
+  let items: PayloadItem[] = [];
+  let result: SplitResult;
+  if (method === "items") {
+    const read = readItems(form);
+    if (read.items === null) {
+      return reject(read.error);
+    }
+    items = read.items;
+    result = computeItemSplits(
+      amountCents,
+      items.map((item) => ({ amountCents: item.amount_cents, participantIds: item.participant_ids })),
+    );
+  } else {
+    const values = new Map(participantIds.map((id) => [id, parseSplitValue(method, text(`value:${id}`))]));
+    result = computeSplits(method, amountCents, participantIds, values);
+  }
   if (result.splits === null) {
     return reject(result.error);
   }
@@ -242,7 +321,7 @@ export function buildExpensePayload(form: FormData): PayloadResult {
         amount_cents: split.amountCents,
         weight: split.weight,
       })),
-      items: [],
+      items,
     },
     error: null,
   };

@@ -25,9 +25,17 @@ export type ExpenseSummary = {
   category: string | null;
 };
 
+export type ExpenseItem = {
+  position: number;
+  description: string;
+  amount_cents: number;
+  expense_item_participants: { user_id: string }[];
+};
+
 export type ExpenseDetail = ExpenseSummary & {
   split_method: SplitMethod;
   expense_splits: { user_id: string; amount_cents: number; weight: number | null }[];
+  expense_items: ExpenseItem[];
 };
 
 export type MemberBalance = {
@@ -132,11 +140,12 @@ export const getExpense = cache(async (groupId: string, expenseId: string): Prom
   const { data, error } = await supabase
     .from("expenses")
     .select(
-      "id, description, amount_cents, expense_date, payer_id, category, split_method, expense_splits(user_id, amount_cents, weight)",
+      "id, description, amount_cents, expense_date, payer_id, category, split_method, expense_splits(user_id, amount_cents, weight), expense_items(position, description, amount_cents, expense_item_participants(user_id))",
     )
     .eq("id", expenseId)
     .eq("group_id", groupId)
     .is("deleted_at", null)
+    .order("position", { referencedTable: "expense_items" })
     .maybeSingle()
     .overrideTypes<ExpenseDetail, { merge: false }>();
   if (error) {
