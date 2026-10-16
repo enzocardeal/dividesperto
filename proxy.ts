@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { supabaseEnv } from "@/lib/supabase/env";
 
 const PUBLIC_PATHS = ["/login", "/invite", "/auth/callback", "/api/invite"];
+const SIGNED_OUT_PATHS = ["/login", "/invite"];
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/api/cron/");
@@ -32,14 +33,18 @@ export async function proxy(request: NextRequest) {
   });
 
   const { data } = await supabase.auth.getClaims();
-  if (data?.claims || isPublic(request.nextUrl.pathname)) {
-    return response;
+  const { pathname } = request.nextUrl;
+  if (data?.claims) {
+    return SIGNED_OUT_PATHS.includes(pathname) ? redirectTo(request, response, "/") : response;
   }
+  return isPublic(pathname) ? response : redirectTo(request, response, "/login");
+}
 
-  const loginUrl = request.nextUrl.clone();
-  loginUrl.pathname = "/login";
-  loginUrl.search = "";
-  const redirect = NextResponse.redirect(loginUrl);
+function redirectTo(request: NextRequest, response: NextResponse, pathname: string) {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  url.search = "";
+  const redirect = NextResponse.redirect(url);
   for (const cookie of response.cookies.getAll()) {
     redirect.cookies.set(cookie);
   }
