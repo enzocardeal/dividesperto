@@ -21,6 +21,7 @@ export async function createGroup(_state: ActionState, formData: FormData): Prom
   if (error) {
     return { error: groupErrorMessage(error.code) };
   }
+  refresh();
   redirect(`/groups/${data}`, RedirectType.replace);
 }
 
@@ -67,6 +68,7 @@ export async function saveExpense(_state: ActionState, formData: FormData): Prom
   if (rpcError) {
     return { error: expenseErrorMessage(rpcError.code) };
   }
+  refresh();
   redirect(
     payload.id === null ? `/groups/${payload.group_id}` : `/groups/${payload.group_id}/expenses/${payload.id}`,
     RedirectType.replace,
@@ -84,6 +86,7 @@ export async function deleteExpense(_state: ActionState, formData: FormData): Pr
   if (error) {
     return { error: expenseErrorMessage(error.code) };
   }
+  refresh();
   redirect(`/groups/${groupId}`, RedirectType.replace);
 }
 
@@ -97,6 +100,7 @@ export async function savePayment(_state: ActionState, formData: FormData): Prom
   if (rpcError) {
     return { error: paymentErrorMessage(rpcError.code) };
   }
+  refresh();
   redirect(
     payload.id === null
       ? `/groups/${payload.group_id}/balances`
@@ -116,6 +120,7 @@ export async function deletePayment(_state: ActionState, formData: FormData): Pr
   if (error) {
     return { error: paymentErrorMessage(error.code) };
   }
+  refresh();
   redirect(`/groups/${groupId}/balances`, RedirectType.replace);
 }
 

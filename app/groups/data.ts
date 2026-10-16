@@ -34,6 +34,7 @@ export type ExpenseItem = {
 
 export type ExpenseDetail = ExpenseSummary & {
   split_method: SplitMethod;
+  updated_at: string;
   expense_splits: { user_id: string; amount_cents: number; weight: number | null }[];
   expense_items: ExpenseItem[];
 };
@@ -51,6 +52,8 @@ export type Payment = {
   paid_on: string;
   note: string | null;
 };
+
+export type PaymentDetail = Payment & { updated_at: string };
 
 export type ActivityRow = {
   id: number;
@@ -140,7 +143,7 @@ export const getExpense = cache(async (groupId: string, expenseId: string): Prom
   const { data, error } = await supabase
     .from("expenses")
     .select(
-      "id, description, amount_cents, expense_date, payer_id, category, split_method, expense_splits(user_id, amount_cents, weight), expense_items(position, description, amount_cents, expense_item_participants(user_id))",
+      "id, description, amount_cents, expense_date, payer_id, category, split_method, updated_at, expense_splits(user_id, amount_cents, weight), expense_items(position, description, amount_cents, expense_item_participants(user_id))",
     )
     .eq("id", expenseId)
     .eq("group_id", groupId)
@@ -183,19 +186,19 @@ export const getPayments = cache(async (groupId: string) => {
   return data;
 });
 
-export const getPayment = cache(async (groupId: string, paymentId: string): Promise<Payment | null> => {
+export const getPayment = cache(async (groupId: string, paymentId: string): Promise<PaymentDetail | null> => {
   if (!isUuid(paymentId)) {
     return null;
   }
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("payments")
-    .select("id, from_user_id, to_user_id, amount_cents, paid_on, note")
+    .select("id, from_user_id, to_user_id, amount_cents, paid_on, note, updated_at")
     .eq("id", paymentId)
     .eq("group_id", groupId)
     .is("deleted_at", null)
     .maybeSingle()
-    .overrideTypes<Payment, { merge: false }>();
+    .overrideTypes<PaymentDetail, { merge: false }>();
   if (error) {
     throw error;
   }

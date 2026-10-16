@@ -38,6 +38,7 @@ async function EditPayment({ params }: EditParams) {
         <p className="text-sm text-neutral-600">{strings.group.archivedNote}</p>
       ) : (
         <PaymentForm
+          key={payment.updated_at}
           groupId={group.id}
           people={members}
           currentUserId={me}

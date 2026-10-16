@@ -38,6 +38,7 @@ async function EditExpense({ params }: EditParams) {
         <p className="text-sm text-neutral-600">{strings.group.archivedNote}</p>
       ) : (
         <ExpenseForm
+          key={expense.updated_at}
           groupId={group.id}
           people={members}
           currentUserId={me}
