@@ -16,8 +16,8 @@ Do this walkthrough on two real phones before you call a release done. Use an iP
 | 1 | Refused login | On `/login`, tap "Entrar com Google" with the account that has no invite. | `/login` shows "Você precisa de um convite." and the link "Tenho um código de convite". |
 | 2 | Invite (optional) | On `/invite`, type the code and the email of the new friend. Tap "Liberar acesso". | The page shows "Pronto. Agora entre com o Google usando este e-mail." |
 | 3 | Login | Tap "Entrar com Google" with an invited account. | Home shows "Olá, <name>" and the button "Sair". |
-| 4 | Favicon | Look at the browser tab and the tab switcher. | The icon is a dark square with a white division sign. |
-| 5 | Add to home screen | iPhone: Share, then "Adicionar à Tela de Início". Android: menu, then "Instalar app" or "Adicionar à tela inicial". | The home screen shows the icon with the name "dividesperto". |
+| 4 | Favicon | Look at the browser tab and the tab switcher, once in light mode and once in dark mode. | The icon is a green square with a white division sign. It is clear on the light and on the dark tab bar. |
+| 5 | Add to home screen | iPhone: Share, then "Adicionar à Tela de Início". Android: menu, then "Instalar app" or "Adicionar à tela inicial". | The home screen shows the green icon with the name "dividesperto". |
 | 6 | Home screen app | Open the app from the home screen. Log in if it asks. | The app opens without the browser address bar. Google login brings you back into the app. |
 | 7 | Bottom navigation | Open Home, a group and "Saldos gerais". Then open `/login` in the browser. | "Grupos" and "Saldos gerais" stay at the bottom of every logged-in page, above the home indicator or gesture bar. The current item is dark. `/login` has no navigation. |
 | 8 | New group | Tap "Novo grupo", type a name, tap "Criar grupo". | The group opens with you as the only member. The Despesas tab shows the empty state "Nenhuma despesa ainda." |
