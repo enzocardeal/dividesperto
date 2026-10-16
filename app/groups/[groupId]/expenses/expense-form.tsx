@@ -191,14 +191,14 @@ export function ExpenseForm({ groupId, people, currentUserId, today, expense }: 
           <span className={LABEL}>{strings.expenseForm.amount}</span>
           <MoneyInput name="amount" required defaultCents={expense?.amountCents} onCentsChange={setAmountCents} />
         </label>
-        <label className="flex flex-1 flex-col gap-1">
+        <label className="flex min-w-0 flex-1 flex-col gap-1">
           <span className={LABEL}>{strings.expenseForm.date}</span>
           <input
             type="date"
             name="date"
             required
             defaultValue={expense?.date ?? today}
-            className={`${FIELD} h-11 w-full min-w-0`}
+            className={`${FIELD} h-11 w-full min-w-0 appearance-none [&::-webkit-date-and-time-value]:text-left`}
           />
         </label>
       </div>

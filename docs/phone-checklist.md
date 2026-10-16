@@ -36,7 +36,7 @@ Do this walkthrough on two real phones before you call a release done. Use an iP
 | 21 | Overall balances | Open a group. Tap "Saldos gerais" in the bottom navigation, then tap the back arrow "←". | The page shows the sum per person across groups, with one line per group. The back arrow goes back to the group. |
 | 22 | Archive | Open the menu "⋯", tap "Arquivar grupo". Go to Home. Then unarchive the group. | The archived group is read-only and moves to "Grupos arquivados". After "Desarquivar grupo" it is active again. |
 | 23 | Empty states | Create a new group. Open its Despesas and Saldos tabs. | "Nenhuma despesa ainda." and "Nenhum pagamento ainda." show in dashed boxes with a short hint in Portuguese. |
-| 24 | Layout | Scroll a long list. Turn the phone to landscape. | No page scrolls sideways. "Nova despesa" and "Registrar pagamento" stay above the bottom navigation. No content hides behind the notch or the rounded corners. |
+| 24 | Layout | Scroll a long list. Open "Nova despesa" and "Registrar pagamento" and tap "Data". Turn the phone to landscape. | No page scrolls sideways. "Data" ends inside the screen next to "Valor" and opens the date picker without a zoom. "Nova despesa" and "Registrar pagamento" stay above the bottom navigation. No content hides behind the notch or the rounded corners. |
 | 25 | Logout | On Home, tap "Sair". | The app goes to `/login`. `/login` has no navigation. |
 
 ## Results
