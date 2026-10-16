@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { buildExpensePayload, expenseErrorMessage } from "@/lib/expenses";
 import { groupErrorMessage, isUuid, parseGroupName } from "@/lib/groups";
 import { buildPaymentPayload, paymentErrorMessage } from "@/lib/payments";
+import { buildSettleArgs, settleErrorMessage } from "@/lib/settlement/settle";
 import { strings } from "@/lib/strings";
 import { createClient } from "@/lib/supabase/server";
 
@@ -112,4 +113,18 @@ export async function deletePayment(_state: ActionState, formData: FormData): Pr
     return { error: paymentErrorMessage(error.code) };
   }
   redirect(`/groups/${groupId}/balances`);
+}
+
+export async function settleTransfer(_state: ActionState, formData: FormData): Promise<ActionState> {
+  const args = buildSettleArgs(formData);
+  if (args === null) {
+    return { error: strings.errors.generic };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("settle_transfer", args);
+  if (error) {
+    return { error: settleErrorMessage(error.code) };
+  }
+  refresh();
+  return { error: null };
 }

@@ -4,8 +4,10 @@ import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
 import { netStatus, type NetStatus } from "@/lib/balances";
 import { formatBRL, formatDate } from "@/lib/money/format";
+import { simplify } from "@/lib/settlement/simplify";
 import { strings } from "@/lib/strings";
 import { getCurrentUserId, getGroup, getGroupPeople, getMemberBalances, getPayments } from "../../data";
+import { SettleButton } from "./settle-button";
 
 const STATUS_CLASS: Record<NetStatus, string> = {
   receives: "text-green-700",
@@ -41,6 +43,7 @@ async function Balances({ params }: Pick<PageProps<"/groups/[groupId]/balances">
   const names = new Map(members.map((person) => [person.id, person.display_name]));
   const nameOf = (id: string) => names.get(id) ?? strings.activity.someone;
   const archived = group.archived_at !== null;
+  const transfers = simplify(balances.map((balance) => ({ userId: balance.user_id, netCents: balance.net_cents })));
 
   return (
     <>
@@ -64,6 +67,36 @@ async function Balances({ params }: Pick<PageProps<"/groups/[groupId]/balances">
             );
           })}
         </ul>
+      </section>
+      <section className="flex flex-col gap-2">
+        <h2 className="text-lg font-semibold">{strings.settlement.title}</h2>
+        {transfers.length === 0 ? (
+          <p className="text-neutral-500">{strings.settlement.allSettled}</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {transfers.map((transfer) => (
+              <li
+                key={`${transfer.from}:${transfer.to}`}
+                className="flex flex-col gap-2 rounded-lg border border-neutral-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <span className="min-w-0">
+                  <span className="font-medium">{nameOf(transfer.from)}</span> {strings.settlement.pays}{" "}
+                  <span className="font-medium tabular-nums">{formatBRL(transfer.amountCents)}</span>{" "}
+                  {strings.settlement.to} <span className="font-medium">{nameOf(transfer.to)}</span>
+                </span>
+                {!archived && (
+                  <SettleButton
+                    groupId={group.id}
+                    fromId={transfer.from}
+                    toId={transfer.to}
+                    amountCents={transfer.amountCents}
+                    expectedNetCents={nets.get(transfer.from) ?? 0}
+                  />
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">{strings.balances.payments}</h2>
