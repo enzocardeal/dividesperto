@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { getCurrentUserId } from "@/app/groups/data";
 import { Avatar } from "@/components/avatar";
+import { BackLink } from "@/components/back-link";
 import { EmptyState } from "@/components/empty-state";
 import { ListSkeleton } from "@/components/skeleton";
 import { groupNetsFor, summarizeFor } from "@/lib/balances";
@@ -13,13 +14,7 @@ export default function OverallBalancesPage() {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
       <div className="flex items-center gap-1">
-        <Link
-          href="/"
-          aria-label={strings.group.back}
-          className="-ml-3 flex size-11 shrink-0 items-center justify-center text-xl"
-        >
-          ←
-        </Link>
+        <BackLink href="/" />
         <h1 className="text-xl font-semibold">{strings.overall.title}</h1>
       </div>
       <p className="text-sm text-neutral-600">{strings.overall.intro}</p>

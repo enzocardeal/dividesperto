@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
+import { BackLink } from "@/components/back-link";
 import { Skeleton } from "@/components/skeleton";
 import { memberCountLabel } from "@/lib/groups";
 import { strings } from "@/lib/strings";
@@ -20,24 +21,12 @@ export default function GroupLayout({ children, params }: LayoutProps<"/groups/[
   );
 }
 
-function BackLink() {
-  return (
-    <Link
-      href="/"
-      aria-label={strings.group.back}
-      className="-ml-3 flex size-11 shrink-0 items-center justify-center text-xl"
-    >
-      ←
-    </Link>
-  );
-}
-
 function GroupHeaderSkeleton() {
   const tabs = [strings.group.expenses, strings.group.balances, strings.group.activity];
   return (
     <header className="flex flex-col gap-3 border-b border-neutral-200 px-4 pt-3">
       <div className="flex min-h-11 items-center gap-1">
-        <BackLink />
+        <BackLink href="/" />
         <Skeleton className="h-7 w-48" />
       </div>
       <div className="flex min-h-11 items-center">
@@ -68,7 +57,7 @@ async function GroupHeader({ params }: Pick<LayoutProps<"/groups/[groupId]">, "p
   return (
     <header className="flex flex-col gap-3 border-b border-neutral-200 px-4 pt-3">
       <div className="flex items-center gap-1">
-        <BackLink />
+        <BackLink href="/" />
         <div className="flex min-w-0 flex-1 flex-col">
           <h1 className="truncate text-xl font-semibold">{group.name}</h1>
           {archived && (

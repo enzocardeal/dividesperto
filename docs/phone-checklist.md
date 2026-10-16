@@ -33,7 +33,7 @@ Do this walkthrough on two real phones before you call a release done. Use an iP
 | 18 | Stale tap and error toast | Open the Saldos tab on both phones. Tap "Marcar como pago" on phone 1, then on phone 2 without a refresh. | Phone 2 shows a red message "Os saldos mudaram. Atualize a página." above the bottom navigation. The message closes with "✕" or after about 6 seconds. |
 | 19 | Manual payment | Tap "Registrar pagamento", fill the form, save. Then edit and delete it. | The payment shows, changes and leaves the list. The nets change each time. |
 | 20 | Activity | Open the Atividade tab. | Each change shows who made it, with the old and new values. |
-| 21 | Overall balances | Tap "Saldos gerais" in the bottom navigation. | The page shows the sum per person across groups, with one line per group. |
+| 21 | Overall balances | Open a group. Tap "Saldos gerais" in the bottom navigation, then tap the back arrow "←". | The page shows the sum per person across groups, with one line per group. The back arrow goes back to the group. |
 | 22 | Archive | Open the menu "⋯", tap "Arquivar grupo". Go to Home. Then unarchive the group. | The archived group is read-only and moves to "Grupos arquivados". After "Desarquivar grupo" it is active again. |
 | 23 | Empty states | Create a new group. Open its Despesas and Saldos tabs. | "Nenhuma despesa ainda." and "Nenhum pagamento ainda." show in dashed boxes with a short hint in Portuguese. |
 | 24 | Layout | Scroll a long list. Turn the phone to landscape. | No page scrolls sideways. "Nova despesa" and "Registrar pagamento" stay above the bottom navigation. No content hides behind the notch or the rounded corners. |

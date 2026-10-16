@@ -1,7 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { buildExpensePayload, expenseErrorMessage } from "@/lib/expenses";
 import { groupErrorMessage, isUuid, parseGroupName } from "@/lib/groups";
 import { buildPaymentPayload, paymentErrorMessage } from "@/lib/payments";
@@ -21,7 +21,7 @@ export async function createGroup(_state: ActionState, formData: FormData): Prom
   if (error) {
     return { error: groupErrorMessage(error.code) };
   }
-  redirect(`/groups/${data}`);
+  redirect(`/groups/${data}`, RedirectType.replace);
 }
 
 export async function setGroupArchived(_state: ActionState, formData: FormData): Promise<ActionState> {
@@ -67,7 +67,10 @@ export async function saveExpense(_state: ActionState, formData: FormData): Prom
   if (rpcError) {
     return { error: expenseErrorMessage(rpcError.code) };
   }
-  redirect(payload.id === null ? `/groups/${payload.group_id}` : `/groups/${payload.group_id}/expenses/${payload.id}`);
+  redirect(
+    payload.id === null ? `/groups/${payload.group_id}` : `/groups/${payload.group_id}/expenses/${payload.id}`,
+    RedirectType.replace,
+  );
 }
 
 export async function deleteExpense(_state: ActionState, formData: FormData): Promise<ActionState> {
@@ -81,7 +84,7 @@ export async function deleteExpense(_state: ActionState, formData: FormData): Pr
   if (error) {
     return { error: expenseErrorMessage(error.code) };
   }
-  redirect(`/groups/${groupId}`);
+  redirect(`/groups/${groupId}`, RedirectType.replace);
 }
 
 export async function savePayment(_state: ActionState, formData: FormData): Promise<ActionState> {
@@ -98,6 +101,7 @@ export async function savePayment(_state: ActionState, formData: FormData): Prom
     payload.id === null
       ? `/groups/${payload.group_id}/balances`
       : `/groups/${payload.group_id}/payments/${payload.id}`,
+    RedirectType.replace,
   );
 }
 
@@ -112,7 +116,7 @@ export async function deletePayment(_state: ActionState, formData: FormData): Pr
   if (error) {
     return { error: paymentErrorMessage(error.code) };
   }
-  redirect(`/groups/${groupId}/balances`);
+  redirect(`/groups/${groupId}/balances`, RedirectType.replace);
 }
 
 export async function settleTransfer(_state: ActionState, formData: FormData): Promise<ActionState> {
