@@ -23,7 +23,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="pt-BR">
       <body className="flex min-h-dvh flex-col bg-white text-neutral-900 antialiased">
         {children}
-        <Suspense fallback={<BottomNavBar pathname={null} />}>
+        {/* Only /groups/[groupId] routes suspend here, because no other route has a dynamic segment. */}
+        <Suspense fallback={<BottomNavBar current="groups" />}>
           <BottomNav />
         </Suspense>
       </body>

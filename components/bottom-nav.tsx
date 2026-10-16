@@ -7,22 +7,26 @@ import { strings } from "@/lib/strings";
 
 const HIDDEN_ON = ["/login", "/invite"];
 
+type Section = "groups" | "balances";
+
 type NavItem = { href: string; label: string; icon: ReactNode; active: boolean };
 
 export function BottomNav() {
   const pathname = usePathname();
-  return HIDDEN_ON.includes(pathname) ? null : <BottomNavBar pathname={pathname} />;
+  return HIDDEN_ON.includes(pathname) ? null : <BottomNavBar current={sectionOf(pathname)} />;
 }
 
-export function BottomNavBar({ pathname }: { pathname: string | null }) {
+function sectionOf(pathname: string): Section | null {
+  if (pathname === "/" || pathname.startsWith("/groups/")) {
+    return "groups";
+  }
+  return pathname === "/balances" ? "balances" : null;
+}
+
+export function BottomNavBar({ current }: { current: Section | null }) {
   const items: NavItem[] = [
-    {
-      href: "/",
-      label: strings.nav.groups,
-      icon: <GroupsIcon />,
-      active: pathname === "/" || (pathname?.startsWith("/groups/") ?? false),
-    },
-    { href: "/balances", label: strings.overall.title, icon: <BalancesIcon />, active: pathname === "/balances" },
+    { href: "/", label: strings.nav.groups, icon: <GroupsIcon />, active: current === "groups" },
+    { href: "/balances", label: strings.overall.title, icon: <BalancesIcon />, active: current === "balances" },
   ];
 
   return (
