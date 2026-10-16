@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { signOut } from "@/app/auth/actions";
+import { getOverallBalances } from "@/app/balances/data";
+import { getCurrentUserId } from "@/app/groups/data";
+import { summarizeFor } from "@/lib/balances";
 import { memberCountLabel } from "@/lib/groups";
+import { formatBRL } from "@/lib/money/format";
 import { strings } from "@/lib/strings";
 import { createClient } from "@/lib/supabase/server";
 
@@ -18,6 +22,9 @@ export default function Home() {
       <h1 className="text-3xl font-semibold">{strings.app.name}</h1>
       <Suspense>
         <Account />
+      </Suspense>
+      <Suspense>
+        <BalanceCard />
       </Suspense>
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-4">
@@ -62,6 +69,32 @@ async function Account() {
         {strings.home.logout}
       </button>
     </form>
+  );
+}
+
+async function BalanceCard() {
+  const me = await getCurrentUserId();
+  if (!me) {
+    return null;
+  }
+  const { owesCents, receivesCents } = summarizeFor(me, await getOverallBalances(me));
+
+  return (
+    <Link href="/balances" className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-lg border border-neutral-200 p-4">
+      <span className="flex flex-col">
+        <span className="text-sm text-neutral-500">{strings.home.youOwe}</span>
+        <span className={`text-xl font-semibold tabular-nums ${owesCents > 0 ? "text-red-700" : ""}`}>
+          {formatBRL(owesCents)}
+        </span>
+      </span>
+      <span className="flex flex-col">
+        <span className="text-sm text-neutral-500">{strings.home.youReceive}</span>
+        <span className={`text-xl font-semibold tabular-nums ${receivesCents > 0 ? "text-green-700" : ""}`}>
+          {formatBRL(receivesCents)}
+        </span>
+      </span>
+      <span className="col-span-2 text-sm font-medium text-neutral-600">{strings.home.seeBalances} →</span>
+    </Link>
   );
 }
 

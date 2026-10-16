@@ -107,6 +107,36 @@ function expenseChanges(before: Snapshot, after: Snapshot, nameOf: NameOf): stri
   return details;
 }
 
+function paymentParties(record: Snapshot, nameOf: NameOf): string {
+  return `${nameOf(str(record, "from_user_id"))} ${text.paymentTo} ${nameOf(str(record, "to_user_id"))}`;
+}
+
+function paymentSummary(record: Snapshot): string[] {
+  return [`${money(cents(record, "amount_cents"))} · ${day(str(record, "paid_on"))}`];
+}
+
+function paymentChanges(before: Snapshot, after: Snapshot, nameOf: NameOf): string[] {
+  const details: string[] = [];
+  const differs = (key: string) => before[key] !== after[key];
+
+  if (differs("from_user_id")) {
+    details.push(change(text.paymentFrom, nameOf(str(before, "from_user_id")), nameOf(str(after, "from_user_id"))));
+  }
+  if (differs("to_user_id")) {
+    details.push(change(text.paymentReceiver, nameOf(str(before, "to_user_id")), nameOf(str(after, "to_user_id"))));
+  }
+  if (differs("amount_cents")) {
+    details.push(change(text.amount, money(cents(before, "amount_cents")), money(cents(after, "amount_cents"))));
+  }
+  if (differs("paid_on")) {
+    details.push(change(text.date, day(str(before, "paid_on")), day(str(after, "paid_on"))));
+  }
+  if (differs("note")) {
+    details.push(change(text.note, str(before, "note") || text.none, str(after, "note") || text.none));
+  }
+  return details;
+}
+
 function groupUpdate(actor: string, before: Snapshot, after: Snapshot): ActivityView {
   const wasArchived = before.archived_at !== null && before.archived_at !== undefined;
   const isArchived = after.archived_at !== null && after.archived_at !== undefined;
@@ -148,6 +178,21 @@ export function describeActivity(entry: ActivityEntry, nameOf: NameOf): Activity
       return {
         title: `${actor} ${text.expenseDeleted} ${quoted(str(before, "description"))}`,
         details: expenseSummary(before, nameOf),
+      };
+    case "payment:create":
+      return {
+        title: `${actor} ${text.paymentCreated} ${paymentParties(after, nameOf)}`,
+        details: paymentSummary(after),
+      };
+    case "payment:update":
+      return {
+        title: `${actor} ${text.paymentUpdated} ${paymentParties(after, nameOf)}`,
+        details: paymentChanges(before, after, nameOf),
+      };
+    case "payment:delete":
+      return {
+        title: `${actor} ${text.paymentDeleted} ${paymentParties(before, nameOf)}`,
+        details: paymentSummary(before),
       };
     default:
       return { title: `${actor} ${text.other}`, details: [] };

@@ -99,12 +99,47 @@ test("group and member entries render their own sentences", () => {
 });
 
 test("an unknown entry or a broken snapshot still renders", () => {
-  assert.deepEqual(describeActivity(entry({ entity_type: "payment" }), nameOf), {
+  assert.deepEqual(describeActivity(entry({ entity_type: "settlement" }), nameOf), {
     title: "Ana fez uma alteração",
     details: [],
   });
   assert.deepEqual(describeActivity(entry({ actor_id: "zé", after: "oops" }), nameOf), {
     title: "Alguém adicionou a despesa “”",
     details: ["— · pago por Alguém"],
+  });
+});
+
+const pix = {
+  from_user_id: "bruno",
+  to_user_id: "ana",
+  amount_cents: 5000,
+  paid_on: "2026-10-16",
+  note: null,
+};
+
+test("a payment creation names both people, the amount and the date", () => {
+  assert.deepEqual(describeActivity(entry({ actor_id: "bruno", entity_type: "payment", after: pix }), nameOf), {
+    title: "Bruno registrou um pagamento de Bruno para Ana",
+    details: [`${formatBRL(5000)} · 16/10/2026`],
+  });
+});
+
+test("a payment update lists the old and new values", () => {
+  const after = { ...pix, from_user_id: "caio", amount_cents: 4000, paid_on: "2026-10-17", note: "Pix" };
+  assert.deepEqual(describeActivity(entry({ entity_type: "payment", action: "update", before: pix, after }), nameOf), {
+    title: "Ana alterou o pagamento de Caio para Ana",
+    details: [
+      "Quem pagou: Bruno → Caio",
+      `Valor: ${formatBRL(5000)} → ${formatBRL(4000)}`,
+      "Data: 16/10/2026 → 17/10/2026",
+      "Nota: — → Pix",
+    ],
+  });
+});
+
+test("a payment deletion names the deleted payment", () => {
+  assert.deepEqual(describeActivity(entry({ entity_type: "payment", action: "delete", before: pix }), nameOf), {
+    title: "Ana excluiu o pagamento de Bruno para Ana",
+    details: [`${formatBRL(5000)} · 16/10/2026`],
   });
 });
