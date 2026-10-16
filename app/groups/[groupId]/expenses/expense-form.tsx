@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState, useRef, useState, type FormEvent } from "react";
+import { startTransition, useActionState, useId, useRef, useState, type FormEvent } from "react";
 import { saveExpense } from "@/app/groups/actions";
 import type { Person } from "@/app/groups/data";
 import { Avatar } from "@/components/avatar";
@@ -73,6 +73,7 @@ function initialItems(expense: ExpenseFormValues | undefined, participantIds: st
 
 export function ExpenseForm({ groupId, people, currentUserId, today, expense }: ExpenseFormProps) {
   const [state, action, pending] = useActionState(saveExpense, { error: null });
+  const categoryId = useId();
   const [amountCents, setAmountCents] = useState<number | null>(expense?.amountCents ?? null);
   const [payerId, setPayerId] = useState(
     expense?.payerId ?? people.find((person) => person.id === currentUserId)?.id ?? people[0]?.id ?? "",
@@ -222,9 +223,11 @@ export function ExpenseForm({ groupId, people, currentUserId, today, expense }: 
         </div>
       </fieldset>
 
-      <label className="flex flex-col gap-1">
-        <span className={LABEL}>{strings.expenseForm.category}</span>
-        <select name="category" defaultValue={expense?.category ?? ""} className={FIELD}>
+      <div className="flex flex-col gap-1">
+        <label htmlFor={categoryId} className={LABEL}>
+          {strings.expenseForm.category}
+        </label>
+        <select id={categoryId} name="category" defaultValue={expense?.category ?? ""} className={FIELD}>
           <option value="">{strings.expenseForm.noCategory}</option>
           {CATEGORIES.map((category) => (
             <option key={category} value={category}>
@@ -232,7 +235,7 @@ export function ExpenseForm({ groupId, people, currentUserId, today, expense }: 
             </option>
           ))}
         </select>
-      </label>
+      </div>
 
       <fieldset className="flex flex-col gap-2">
         <legend className={`${LABEL} mb-1`}>{strings.expenseForm.method}</legend>

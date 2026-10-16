@@ -23,7 +23,7 @@ Do this walkthrough on two real phones before you call a release done. Use an iP
 | 8 | New group | Tap "Novo grupo", type a name, tap "Criar grupo". | The group opens with you as the only member. The Despesas tab shows the empty state "Nenhuma despesa ainda." |
 | 9 | Members | Open the menu "⋯", then "Membros". Tap "Adicionar" next to the friend. | The friend appears in "Membros do grupo" and in the avatars under the group name. |
 | 10 | Money input | Tap "Nova despesa", then tap "Valor". Type `123456`. Tap backspace once. Then clear the field, copy `R$ 1.234,56` from a note and paste it into the field. | The keyboard shows only digits, with no comma key. While you type, the field shows "0,01", "0,12", "1,23", "12,34", "123,45" and "1.234,56". Backspace shows "123,45". An empty field shows the grey "0,00". The paste shows "1.234,56". The page does not zoom. |
-| 11 | Equal split | Save an expense of R$ 100,01 split "Igual" between the two accounts. | One share is R$ 50,01 and the other share is R$ 50,00. |
+| 11 | Equal split and category | Tap "Categoria" and choose "Alimentação". Save an expense of R$ 100,01 split "Igual" between the two accounts. Then open it and tap "Editar". | The category list opens on the first tap and closes on the chosen item. One share is R$ 50,01 and the other share is R$ 50,00. The edit form shows "Alimentação". |
 | 12 | Other splits | Try "Valores", "Porcentagem" and "Partes". | The preview "Quanto cada um paga" updates as you type. A wrong sum shows a message in Portuguese. |
 | 13 | Items | Choose "Itens". Add "Pizza" R$ 60,00 for A and B, and "Vinho" R$ 40,00 for B. Set the total to R$ 110,00. | A pays R$ 33,00 and B pays R$ 77,00. |
 | 14 | Edit and loading state | Open an expense, tap "Editar", change the value, tap "Salvar despesa". Then tap "Editar" again. | Grey placeholder blocks show while the page loads. The page body is never blank. The new value shows. The second edit form shows the new value. |
@@ -57,7 +57,7 @@ Device and iOS version:
 - [ ] 8 New group
 - [ ] 9 Members
 - [ ] 10 Money input
-- [ ] 11 Equal split
+- [ ] 11 Equal split and category
 - [ ] 12 Other splits
 - [ ] 13 Items
 - [ ] 14 Edit and loading state
@@ -87,7 +87,7 @@ Device and Android version:
 - [ ] 8 New group
 - [ ] 9 Members
 - [ ] 10 Money input
-- [ ] 11 Equal split
+- [ ] 11 Equal split and category
 - [ ] 12 Other splits
 - [ ] 13 Items
 - [ ] 14 Edit and loading state
