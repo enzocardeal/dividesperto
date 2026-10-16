@@ -10,6 +10,7 @@ import { memberCountLabel } from "@/lib/groups";
 import { formatBRL } from "@/lib/money/format";
 import { strings } from "@/lib/strings";
 import { createClient } from "@/lib/supabase/server";
+import { LogoutButton } from "./logout-button";
 
 type GroupSummary = {
   id: string;
@@ -64,12 +65,7 @@ async function Account() {
       <p className="text-neutral-700">
         {strings.home.greeting} {profile?.display_name ?? data?.claims.email}
       </p>
-      <button
-        type="submit"
-        className="min-h-11 rounded-lg border border-neutral-300 px-4 font-medium"
-      >
-        {strings.home.logout}
-      </button>
+      <LogoutButton />
     </form>
   );
 }

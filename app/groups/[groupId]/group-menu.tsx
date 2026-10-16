@@ -39,7 +39,13 @@ export function GroupMenu({ groupId, archived }: GroupMenuProps) {
             <input type="hidden" name="groupId" value={groupId} />
             <input type="hidden" name="archived" value={String(!archived)} />
             <button type="submit" disabled={pending} className={ITEM}>
-              {archived ? strings.group.unarchive : strings.group.archive}
+              {archived
+                ? pending
+                  ? strings.group.unarchiving
+                  : strings.group.unarchive
+                : pending
+                  ? strings.group.archiving
+                  : strings.group.archive}
             </button>
           </form>
         </div>

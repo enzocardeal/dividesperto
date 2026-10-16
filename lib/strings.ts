@@ -14,6 +14,7 @@ export const strings = {
   home: {
     greeting: "Olá,",
     logout: "Sair",
+    loggingOut: "Saindo…",
     groups: "Seus grupos",
     newGroup: "Novo grupo",
     empty: "Nenhum grupo ainda.",
@@ -30,6 +31,8 @@ export const strings = {
     members: "Membros",
     archive: "Arquivar grupo",
     unarchive: "Desarquivar grupo",
+    archiving: "Arquivando…",
+    unarchiving: "Desarquivando…",
     archivedBadge: "Arquivado",
     archivedNote: "Este grupo está arquivado. Desarquive no menu para fazer alterações.",
     person: "pessoa",
