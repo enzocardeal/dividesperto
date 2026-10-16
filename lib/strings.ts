@@ -43,6 +43,14 @@ export const strings = {
     noPayments: "Nenhum pagamento ainda.",
     paidTo: "pagou para",
   },
+  settlement: {
+    title: "Sugestão de acerto",
+    pays: "paga",
+    to: "para",
+    markPaid: "Marcar como pago",
+    marking: "Registrando…",
+    allSettled: "Tudo acertado.",
+  },
   overall: {
     title: "Saldos gerais",
     intro: "Soma dos seus saldos em todos os grupos, inclusive os arquivados.",
@@ -199,6 +207,7 @@ export const strings = {
     expenseNotFound: "Esta despesa não existe mais.",
     invalidPayment: "Os dados do pagamento são inválidos. Confira e tente de novo.",
     paymentNotFound: "Este pagamento não existe mais.",
+    balancesChanged: "Os saldos mudaram. Atualize a página.",
     generic: "Algo deu errado. Tente de novo.",
   },
   login: {
