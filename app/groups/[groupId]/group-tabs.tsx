@@ -16,7 +16,7 @@ export function GroupTabs({ groupId }: { groupId: string }) {
   return (
     <nav className="-mb-px flex">
       {tabs.map((tab) => {
-        const active = pathname === tab.href;
+        const active = pathname === tab.href || (tab.href === base && pathname.startsWith(`${base}/expenses`));
         return (
           <Link
             key={tab.href}

@@ -2,6 +2,7 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
+import { buildExpensePayload, expenseErrorMessage } from "@/lib/expenses";
 import { groupErrorMessage, isUuid, parseGroupName } from "@/lib/groups";
 import { strings } from "@/lib/strings";
 import { createClient } from "@/lib/supabase/server";
@@ -52,4 +53,31 @@ export async function addGroupMember(_state: ActionState, formData: FormData): P
   }
   refresh();
   return { error: null };
+}
+
+export async function saveExpense(_state: ActionState, formData: FormData): Promise<ActionState> {
+  const { payload, error } = buildExpensePayload(formData);
+  if (payload === null) {
+    return { error };
+  }
+  const supabase = await createClient();
+  const { error: rpcError } = await supabase.rpc("save_expense", { p_expense: payload });
+  if (rpcError) {
+    return { error: expenseErrorMessage(rpcError.code) };
+  }
+  redirect(payload.id === null ? `/groups/${payload.group_id}` : `/groups/${payload.group_id}/expenses/${payload.id}`);
+}
+
+export async function deleteExpense(_state: ActionState, formData: FormData): Promise<ActionState> {
+  const groupId = formData.get("groupId");
+  const expenseId = formData.get("expenseId");
+  if (!isUuid(groupId) || !isUuid(expenseId)) {
+    return { error: strings.errors.generic };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_expense", { p_expense_id: expenseId });
+  if (error) {
+    return { error: expenseErrorMessage(error.code) };
+  }
+  redirect(`/groups/${groupId}`);
 }

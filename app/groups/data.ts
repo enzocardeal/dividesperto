@@ -1,4 +1,5 @@
 import { cache } from "react";
+import type { SplitMethod } from "@/lib/expenses";
 import { isUuid } from "@/lib/groups";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,6 +15,32 @@ export type Person = {
   email: string;
   avatar_url: string | null;
 };
+
+export type ExpenseSummary = {
+  id: string;
+  description: string;
+  amount_cents: number;
+  expense_date: string;
+  payer_id: string;
+  category: string | null;
+};
+
+export type ExpenseDetail = ExpenseSummary & {
+  split_method: SplitMethod;
+  expense_splits: { user_id: string; amount_cents: number; weight: number | null }[];
+};
+
+export type ActivityRow = {
+  id: number;
+  actor_id: string;
+  entity_type: string;
+  action: string;
+  before: unknown;
+  after: unknown;
+  created_at: string;
+};
+
+const ACTIVITY_LIMIT = 200;
 
 export const getCurrentUserId = cache(async (): Promise<string | null> => {
   const supabase = await createClient();
@@ -65,4 +92,57 @@ export const getGroupPeople = cache(async (groupId: string) => {
     members: members.data.flatMap((member) => byId.get(member.user_id) ?? []),
     others: profiles.data.filter((person) => !memberIds.has(person.id)),
   };
+});
+
+export const getExpenses = cache(async (groupId: string) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("expenses")
+    .select("id, description, amount_cents, expense_date, payer_id, category")
+    .eq("group_id", groupId)
+    .is("deleted_at", null)
+    .order("expense_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .overrideTypes<ExpenseSummary[], { merge: false }>();
+  if (error) {
+    throw error;
+  }
+  return data;
+});
+
+export const getExpense = cache(async (groupId: string, expenseId: string): Promise<ExpenseDetail | null> => {
+  if (!isUuid(expenseId)) {
+    return null;
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("expenses")
+    .select(
+      "id, description, amount_cents, expense_date, payer_id, category, split_method, expense_splits(user_id, amount_cents, weight)",
+    )
+    .eq("id", expenseId)
+    .eq("group_id", groupId)
+    .is("deleted_at", null)
+    .maybeSingle()
+    .overrideTypes<ExpenseDetail, { merge: false }>();
+  if (error) {
+    throw error;
+  }
+  return data;
+});
+
+export const getActivity = cache(async (groupId: string) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("activity_log")
+    .select("id, actor_id, entity_type, action, before, after, created_at")
+    .eq("group_id", groupId)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(ACTIVITY_LIMIT)
+    .overrideTypes<ActivityRow[], { merge: false }>();
+  if (error) {
+    throw error;
+  }
+  return data;
 });
