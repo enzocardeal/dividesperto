@@ -6,4 +6,8 @@ export const strings = {
   home: {
     soon: "Em breve: grupos, despesas e acertos.",
   },
+  money: {
+    symbol: "R$",
+    placeholder: "0,00",
+  },
 } as const;
