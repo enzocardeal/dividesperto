@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select:not(:disabled),
+  label:has(input:is([type="radio"], [type="checkbox"]):not(:disabled)) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  select:disabled,
+  label:has(input:is([type="radio"], [type="checkbox"]):disabled) {
+    cursor: not-allowed;
+  }
+}
