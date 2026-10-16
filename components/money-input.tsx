@@ -1,13 +1,13 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, type ChangeEvent, type ComponentProps } from "react";
-import { centsToBRLInput, editBRLInput } from "@/lib/money/input";
+import { useLayoutEffect, useRef, useState, type ChangeEvent, type ClipboardEvent, type ComponentProps } from "react";
+import { centsToBRLInput, editBRLInput, pasteBRLInput } from "@/lib/money/input";
 import { parseBRL } from "@/lib/money/parse";
 import { strings } from "@/lib/strings";
 
 type MoneyInputProps = Omit<
   ComponentProps<"input">,
-  "ref" | "type" | "inputMode" | "value" | "defaultValue" | "onChange"
+  "ref" | "type" | "inputMode" | "value" | "defaultValue" | "onChange" | "onPaste"
 > & {
   defaultCents?: number;
   onCentsChange?: (cents: number | null) => void;
@@ -17,30 +17,31 @@ export function MoneyInput({ defaultCents, onCentsChange, className, ...props }:
   const inputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState(() => ({
     text: defaultCents === undefined ? "" : centsToBRLInput(defaultCents),
-    caret: null as number | null,
   }));
 
   useLayoutEffect(() => {
     const input = inputRef.current;
-    if (state.caret === null || input === null || document.activeElement !== input) {
+    if (input === null || document.activeElement !== input) {
       return;
     }
-    input.setSelectionRange(state.caret, state.caret);
+    input.setSelectionRange(state.text.length, state.text.length);
   }, [state]);
 
-  function handleChange(event: ChangeEvent<HTMLInputElement>) {
-    const input = event.currentTarget;
-    const native = event.nativeEvent as InputEvent;
-    const next = editBRLInput(state.text, {
-      value: input.value,
-      caret: input.selectionStart ?? input.value.length,
-      data: native.data ?? null,
-      inputType: native.inputType ?? "",
-    });
-    setState(next);
-    if (next.text !== state.text) {
-      onCentsChange?.(parseBRL(next.text));
+  function update(text: string) {
+    setState({ text });
+    if (text !== state.text) {
+      onCentsChange?.(parseBRL(text));
     }
+  }
+
+  function handleChange(event: ChangeEvent<HTMLInputElement>) {
+    const native = event.nativeEvent as InputEvent;
+    update(editBRLInput(state.text, { value: event.currentTarget.value, inputType: native.inputType ?? "" }));
+  }
+
+  function handlePaste(event: ClipboardEvent<HTMLInputElement>) {
+    event.preventDefault();
+    update(pasteBRLInput(state.text, event.clipboardData.getData("text")));
   }
 
   return (
@@ -56,9 +57,10 @@ export function MoneyInput({ defaultCents, onCentsChange, className, ...props }:
         {...props}
         ref={inputRef}
         type="text"
-        inputMode="decimal"
+        inputMode="numeric"
         value={state.text}
         onChange={handleChange}
+        onPaste={handlePaste}
         className="h-full w-full min-w-0 bg-transparent text-base tabular-nums outline-none"
       />
     </div>
