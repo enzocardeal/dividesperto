@@ -1,22 +1,31 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
+import { BottomNav, BottomNavBar } from "@/components/bottom-nav";
 import { strings } from "@/lib/strings";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: strings.app.name,
   description: strings.app.description,
+  applicationName: strings.app.name,
+  appleWebApp: { capable: true, title: strings.app.name, statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="pt-BR">
-      <body className="min-h-dvh bg-white text-neutral-900 antialiased">
+      <body className="flex min-h-dvh flex-col bg-white text-neutral-900 antialiased">
         {children}
+        <Suspense fallback={<BottomNavBar pathname={null} />}>
+          <BottomNav />
+        </Suspense>
       </body>
     </html>
   );

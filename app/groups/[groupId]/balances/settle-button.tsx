@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { settleTransfer } from "@/app/groups/actions";
+import { ErrorToast } from "@/components/error-toast";
 import { strings } from "@/lib/strings";
 
 type SettleButtonProps = {
@@ -29,11 +30,7 @@ export function SettleButton({ groupId, fromId, toId, amountCents, expectedNetCe
       >
         {pending ? strings.settlement.marking : strings.settlement.markPaid}
       </button>
-      {state.error && (
-        <p role="alert" className="text-sm text-red-700">
-          {state.error}
-        </p>
-      )}
+      <ErrorToast state={state} />
     </form>
   );
 }

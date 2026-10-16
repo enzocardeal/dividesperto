@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
+import { EmptyState } from "@/components/empty-state";
+import { ListSkeleton } from "@/components/skeleton";
 import { describeActivity } from "@/lib/activity";
 import { formatDateTime } from "@/lib/money/format";
 import { strings } from "@/lib/strings";
@@ -8,7 +10,7 @@ import { getActivity, getGroup, getGroupPeople } from "../../data";
 
 export default function ActivityPage({ params }: PageProps<"/groups/[groupId]/activity">) {
   return (
-    <Suspense>
+    <Suspense fallback={<ListSkeleton />}>
       <Activity params={params} />
     </Suspense>
   );
@@ -24,7 +26,7 @@ async function Activity({ params }: Pick<PageProps<"/groups/[groupId]/activity">
   const nameOf = (id: string) => people.get(id)?.display_name ?? strings.activity.someone;
 
   if (entries.length === 0) {
-    return <p className="text-neutral-500">{strings.activity.empty}</p>;
+    return <EmptyState title={strings.activity.empty} hint={strings.activity.emptyHint} />;
   }
 
   return (

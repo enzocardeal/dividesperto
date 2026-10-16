@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { signOut } from "@/app/auth/actions";
 import { getOverallBalances } from "@/app/balances/data";
 import { getCurrentUserId } from "@/app/groups/data";
+import { EmptyState } from "@/components/empty-state";
+import { ListSkeleton, Skeleton } from "@/components/skeleton";
 import { summarizeFor } from "@/lib/balances";
 import { memberCountLabel } from "@/lib/groups";
 import { formatBRL } from "@/lib/money/format";
@@ -18,12 +20,12 @@ type GroupSummary = {
 
 export default function Home() {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 px-4 py-6">
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
       <h1 className="text-3xl font-semibold">{strings.app.name}</h1>
-      <Suspense>
+      <Suspense fallback={<Skeleton className="h-11" />}>
         <Account />
       </Suspense>
-      <Suspense>
+      <Suspense fallback={<Skeleton className="h-28" />}>
         <BalanceCard />
       </Suspense>
       <section className="flex flex-col gap-3">
@@ -36,7 +38,7 @@ export default function Home() {
             {strings.home.newGroup}
           </Link>
         </div>
-        <Suspense>
+        <Suspense fallback={<ListSkeleton />}>
           <Groups />
         </Suspense>
       </section>
@@ -113,8 +115,14 @@ async function Groups() {
 
   return (
     <>
-      {data.length === 0 && <p className="text-neutral-500">{strings.home.empty}</p>}
-      {active.length > 0 && <GroupList groups={active} />}
+      {active.length === 0 ? (
+        <EmptyState
+          title={archived.length === 0 ? strings.home.empty : strings.home.noActive}
+          hint={strings.home.emptyHint}
+        />
+      ) : (
+        <GroupList groups={active} />
+      )}
       {archived.length > 0 && (
         <details>
           <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium text-neutral-600">

@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { addGroupMember } from "@/app/groups/actions";
+import { ErrorToast } from "@/components/error-toast";
 import { strings } from "@/lib/strings";
 
 type AddMemberButtonProps = {
@@ -23,11 +24,7 @@ export function AddMemberButton({ groupId, userId }: AddMemberButtonProps) {
       >
         {pending ? strings.members.adding : strings.members.addButton}
       </button>
-      {state.error && (
-        <p role="alert" className="text-sm text-red-700">
-          {state.error}
-        </p>
-      )}
+      <ErrorToast state={state} />
     </form>
   );
 }

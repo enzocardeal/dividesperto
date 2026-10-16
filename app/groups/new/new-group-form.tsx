@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { createGroup } from "@/app/groups/actions";
+import { ErrorToast } from "@/components/error-toast";
 import { GROUP_NAME_MAX } from "@/lib/groups";
 import { strings } from "@/lib/strings";
 
@@ -21,11 +22,7 @@ export function NewGroupForm() {
           className="min-h-11 rounded-lg border border-neutral-300 px-3"
         />
       </label>
-      {state.error && (
-        <p role="alert" className="text-sm text-red-700">
-          {state.error}
-        </p>
-      )}
+      <ErrorToast state={state} />
       <button
         type="submit"
         disabled={pending}

@@ -1,13 +1,15 @@
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { Avatar } from "@/components/avatar";
+import { EmptyState } from "@/components/empty-state";
+import { ListSkeleton } from "@/components/skeleton";
 import { strings } from "@/lib/strings";
 import { getCurrentUserId, getGroup, getGroupPeople, type Person } from "../../data";
 import { AddMemberButton } from "./add-member-button";
 
 export default function MembersPage({ params }: PageProps<"/groups/[groupId]/members">) {
   return (
-    <Suspense>
+    <Suspense fallback={<ListSkeleton />}>
       <Members params={params} />
     </Suspense>
   );
@@ -35,7 +37,7 @@ async function Members({ params }: Pick<PageProps<"/groups/[groupId]/members">, 
         {group.archived_at !== null ? (
           <p className="text-sm text-neutral-600">{strings.group.archivedNote}</p>
         ) : others.length === 0 ? (
-          <p className="text-sm text-neutral-600">{strings.members.nobodyLeft}</p>
+          <EmptyState title={strings.members.nobodyLeft} hint={strings.members.nobodyLeftHint} />
         ) : (
           <ul className="flex flex-col divide-y divide-neutral-100">
             {others.map((person) => (

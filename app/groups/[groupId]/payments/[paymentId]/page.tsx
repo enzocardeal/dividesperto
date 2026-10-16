@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { ListSkeleton } from "@/components/skeleton";
 import { formatBRL, formatDate } from "@/lib/money/format";
 import { strings } from "@/lib/strings";
 import { getGroup, getGroupPeople, getPayment } from "../../../data";
@@ -10,7 +11,7 @@ type PaymentParams = Pick<PageProps<"/groups/[groupId]/payments/[paymentId]">, "
 
 export default function PaymentPage({ params }: PaymentParams) {
   return (
-    <Suspense>
+    <Suspense fallback={<ListSkeleton />}>
       <Payment params={params} />
     </Suspense>
   );

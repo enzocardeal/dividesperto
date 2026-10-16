@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
+import { ListSkeleton } from "@/components/skeleton";
 import { categoryLabel } from "@/lib/categories";
 import { formatPercent, splitMethodLabel } from "@/lib/expenses";
 import { formatBRL, formatDate } from "@/lib/money/format";
@@ -13,7 +14,7 @@ type ExpenseParams = Pick<PageProps<"/groups/[groupId]/expenses/[expenseId]">, "
 
 export default function ExpensePage({ params }: ExpenseParams) {
   return (
-    <Suspense>
+    <Suspense fallback={<ListSkeleton />}>
       <Expense params={params} />
     </Suspense>
   );

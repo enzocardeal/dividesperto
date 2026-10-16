@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { ListSkeleton } from "@/components/skeleton";
 import { todayInSaoPaulo } from "@/lib/money/format";
 import { strings } from "@/lib/strings";
 import { getCurrentUserId, getGroup, getGroupPeople } from "../../../data";
@@ -7,7 +8,7 @@ import { ExpenseForm } from "../expense-form";
 
 export default function NewExpensePage({ params }: PageProps<"/groups/[groupId]/expenses/new">) {
   return (
-    <Suspense>
+    <Suspense fallback={<ListSkeleton />}>
       <NewExpense params={params} />
     </Suspense>
   );

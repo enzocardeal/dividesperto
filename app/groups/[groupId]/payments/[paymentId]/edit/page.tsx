@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { ListSkeleton } from "@/components/skeleton";
 import { todayInSaoPaulo } from "@/lib/money/format";
 import { strings } from "@/lib/strings";
 import { getCurrentUserId, getGroup, getGroupPeople, getPayment } from "../../../../data";
@@ -9,7 +10,7 @@ type EditParams = Pick<PageProps<"/groups/[groupId]/payments/[paymentId]/edit">,
 
 export default function EditPaymentPage({ params }: EditParams) {
   return (
-    <Suspense>
+    <Suspense fallback={<ListSkeleton />}>
       <EditPayment params={params} />
     </Suspense>
   );

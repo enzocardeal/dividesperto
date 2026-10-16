@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
+import { EmptyState } from "@/components/empty-state";
+import { ListSkeleton } from "@/components/skeleton";
 import { netStatus, type NetStatus } from "@/lib/balances";
 import { formatBRL, formatDate } from "@/lib/money/format";
 import { simplify } from "@/lib/settlement/simplify";
@@ -17,7 +19,7 @@ const STATUS_CLASS: Record<NetStatus, string> = {
 
 export default function BalancesPage({ params }: PageProps<"/groups/[groupId]/balances">) {
   return (
-    <Suspense>
+    <Suspense fallback={<ListSkeleton />}>
       <Balances params={params} />
     </Suspense>
   );
@@ -71,7 +73,7 @@ async function Balances({ params }: Pick<PageProps<"/groups/[groupId]/balances">
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">{strings.settlement.title}</h2>
         {transfers.length === 0 ? (
-          <p className="text-neutral-500">{strings.settlement.allSettled}</p>
+          <EmptyState title={strings.settlement.allSettled} />
         ) : (
           <ul className="flex flex-col gap-2">
             {transfers.map((transfer) => (
@@ -101,7 +103,10 @@ async function Balances({ params }: Pick<PageProps<"/groups/[groupId]/balances">
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">{strings.balances.payments}</h2>
         {payments.length === 0 ? (
-          <p className="text-neutral-500">{strings.balances.noPayments}</p>
+          <EmptyState
+            title={strings.balances.noPayments}
+            hint={archived ? undefined : strings.balances.noPaymentsHint}
+          />
         ) : (
           <ul className="flex flex-col gap-2">
             {payments.map((payment) => (
@@ -129,7 +134,7 @@ async function Balances({ params }: Pick<PageProps<"/groups/[groupId]/balances">
       {!archived && (
         <Link
           href={`/groups/${group.id}/payments/new`}
-          className="sticky bottom-4 mt-auto flex min-h-11 items-center self-end rounded-full bg-neutral-900 px-5 font-medium text-white shadow-lg"
+          className="sticky bottom-(--above-bottom-nav) mt-auto flex min-h-11 items-center self-end rounded-full bg-neutral-900 px-5 font-medium text-white shadow-lg"
         >
           {strings.balances.newPayment}
         </Link>

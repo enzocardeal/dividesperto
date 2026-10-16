@@ -3,12 +3,22 @@ export const strings = {
     name: "dividesperto",
     description: "Divida despesas com os amigos.",
   },
+  nav: {
+    label: "Navegação principal",
+    groups: "Grupos",
+  },
+  loading: "Carregando…",
+  toast: {
+    close: "Fechar aviso",
+  },
   home: {
     greeting: "Olá,",
     logout: "Sair",
     groups: "Seus grupos",
     newGroup: "Novo grupo",
-    empty: "Nenhum grupo ainda. Crie o primeiro.",
+    empty: "Nenhum grupo ainda.",
+    noActive: "Nenhum grupo ativo.",
+    emptyHint: "Crie um grupo para uma viagem, a casa ou um evento.",
     archived: "Grupos arquivados",
     youOwe: "Você deve",
     youReceive: "Você recebe",
@@ -31,6 +41,7 @@ export const strings = {
   expenses: {
     new: "Nova despesa",
     empty: "Nenhuma despesa ainda.",
+    emptyHint: "Toque em “Nova despesa” para adicionar a primeira.",
     paid: "pagou",
   },
   balances: {
@@ -41,6 +52,7 @@ export const strings = {
     newPayment: "Registrar pagamento",
     payments: "Pagamentos",
     noPayments: "Nenhum pagamento ainda.",
+    noPaymentsHint: "Toque em “Registrar pagamento” quando alguém pagar outra pessoa.",
     paidTo: "pagou para",
   },
   settlement: {
@@ -163,6 +175,7 @@ export const strings = {
   },
   activity: {
     empty: "Nenhuma alteração ainda.",
+    emptyHint: "Despesas, pagamentos e mudanças no grupo aparecem aqui.",
     someone: "Alguém",
     groupCreated: "criou o grupo",
     groupRenamed: "renomeou o grupo",
@@ -207,7 +220,14 @@ export const strings = {
     addButton: "Adicionar",
     adding: "Adicionando…",
     nobodyLeft: "Todas as pessoas cadastradas já estão no grupo.",
+    nobodyLeftHint: "Para entrar no grupo, a pessoa precisa de um convite e de entrar no app uma vez.",
     you: "(você)",
+  },
+  errorPage: {
+    title: "Algo deu errado.",
+    text: "Não foi possível carregar esta página. Confira a conexão e tente de novo.",
+    retry: "Tentar de novo",
+    home: "Ir para o início",
   },
   notFound: {
     title: "Página não encontrada.",

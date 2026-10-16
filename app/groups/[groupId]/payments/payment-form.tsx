@@ -4,6 +4,7 @@ import { startTransition, useActionState, useState, type FormEvent } from "react
 import { savePayment } from "@/app/groups/actions";
 import type { Person } from "@/app/groups/data";
 import { Avatar } from "@/components/avatar";
+import { ErrorToast } from "@/components/error-toast";
 import { MoneyInput } from "@/components/money-input";
 import { NOTE_MAX } from "@/lib/payments";
 import { strings } from "@/lib/strings";
@@ -126,11 +127,7 @@ export function PaymentForm({ groupId, people, currentUserId, today, payment }: 
         />
       </label>
 
-      {state.error && (
-        <p role="alert" className="text-sm text-red-700">
-          {state.error}
-        </p>
-      )}
+      <ErrorToast state={state} />
       <button
         type="submit"
         disabled={pending}

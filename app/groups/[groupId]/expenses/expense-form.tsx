@@ -4,6 +4,7 @@ import { startTransition, useActionState, useRef, useState, type FormEvent } fro
 import { saveExpense } from "@/app/groups/actions";
 import type { Person } from "@/app/groups/data";
 import { Avatar } from "@/components/avatar";
+import { ErrorToast } from "@/components/error-toast";
 import { MoneyInput } from "@/components/money-input";
 import { CATEGORIES } from "@/lib/categories";
 import {
@@ -415,11 +416,7 @@ export function ExpenseForm({ groupId, people, currentUserId, today, expense }: 
         )}
       </section>
 
-      {state.error && (
-        <p role="alert" className="text-sm text-red-700">
-          {state.error}
-        </p>
-      )}
+      <ErrorToast state={state} />
       <button
         type="submit"
         disabled={pending}

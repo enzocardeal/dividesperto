@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { getCurrentUserId } from "@/app/groups/data";
 import { Avatar } from "@/components/avatar";
+import { EmptyState } from "@/components/empty-state";
+import { ListSkeleton } from "@/components/skeleton";
 import { groupNetsFor, summarizeFor } from "@/lib/balances";
 import { formatBRL } from "@/lib/money/format";
 import { strings } from "@/lib/strings";
@@ -9,7 +11,7 @@ import { getGroupNames, getGroupPairBalances, getOverallBalances, getPeople } fr
 
 export default function OverallBalancesPage() {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 px-4 py-6">
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
       <div className="flex items-center gap-1">
         <Link
           href="/"
@@ -21,7 +23,7 @@ export default function OverallBalancesPage() {
         <h1 className="text-xl font-semibold">{strings.overall.title}</h1>
       </div>
       <p className="text-sm text-neutral-600">{strings.overall.intro}</p>
-      <Suspense>
+      <Suspense fallback={<ListSkeleton />}>
         <OverallBalances />
       </Suspense>
     </main>
@@ -51,7 +53,7 @@ async function OverallBalances() {
   ]);
   const { counterparties } = summarizeFor(me, overall);
   if (counterparties.length === 0) {
-    return <p className="text-neutral-500">{strings.overall.allSettled}</p>;
+    return <EmptyState title={strings.overall.allSettled} />;
   }
   const byGroup = groupNetsFor(me, groupPairs);
   const groupNames = new Map(groups.map((group) => [group.id, group.name]));
