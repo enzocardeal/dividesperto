@@ -38,6 +38,7 @@ Do this walkthrough on two real phones before you call a release done. Use an iP
 | 23 | Empty states | Create a new group. Open its Despesas and Saldos tabs. | "Nenhuma despesa ainda." and "Nenhum pagamento ainda." show in dashed boxes with a short hint in Portuguese. |
 | 24 | Layout | Scroll a long list. Open "Nova despesa" and "Registrar pagamento" and tap "Data". Turn the phone to landscape. | No page scrolls sideways. "Data" ends inside the screen next to "Valor" and opens the date picker without a zoom. "Nova despesa" and "Registrar pagamento" stay above the bottom navigation. No content hides behind the notch or the rounded corners. |
 | 25 | Logout | On Home, tap "Sair". | The app goes to `/login`. `/login` has no navigation. |
+| 26 | Tap feedback | Tap "Nova despesa", a group tab, "Saldos gerais" in the bottom navigation and a "Quem pagou" chip. Look at each control while your finger touches it. | While the finger touches it, the control turns lighter and a little smaller. No grey or blue box shows around it. |
 
 ## Results
 
@@ -72,6 +73,7 @@ Device and iOS version:
 - [ ] 23 Empty states
 - [ ] 24 Layout
 - [ ] 25 Logout
+- [ ] 26 Tap feedback
 
 ### Android Chrome
 
@@ -102,6 +104,7 @@ Device and Android version:
 - [ ] 23 Empty states
 - [ ] 24 Layout
 - [ ] 25 Logout
+- [ ] 26 Tap feedback
 
 ### Notes
 
