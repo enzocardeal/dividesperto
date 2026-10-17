@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { cache } from "react";
 import type { Payment, Person } from "@/app/groups/data";
-import type { GroupPairBalance, PairBalance } from "@/lib/balances";
+import type { GroupLedgerRows, GroupPairBalance, PairBalance } from "@/lib/balances";
 import type { ExpenseDebt, LedgerPayment } from "@/lib/settlement/ledger";
 import { BALANCE_VIEW_COOKIE, parseBalanceView, type BalanceView } from "@/lib/settlement/view";
 import { createClient } from "@/lib/supabase/server";
@@ -18,6 +18,42 @@ export type GroupLedger = {
   debts: ExpenseDebt[];
   payments: LedgerPaymentRow[];
 };
+
+type GroupRow = {
+  id: string;
+  name: string;
+  archived_at: string | null;
+};
+
+type InGroup<T> = T & { group_id: string };
+
+const PAGE_SIZE = 1000;
+
+async function readAll<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
+): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await page(from, from + PAGE_SIZE - 1);
+    if (error) {
+      throw error;
+    }
+    rows.push(...(data ?? []));
+    if ((data ?? []).length < PAGE_SIZE) {
+      return rows;
+    }
+  }
+}
+
+function byGroup<T extends { group_id: string }>(rows: readonly T[]): Map<string, T[]> {
+  const groups = new Map<string, T[]>();
+  for (const row of rows) {
+    const list = groups.get(row.group_id) ?? [];
+    list.push(row);
+    groups.set(row.group_id, list);
+  }
+  return groups;
+}
 
 function involving(userId: string): string {
   return `debtor_id.eq.${userId},creditor_id.eq.${userId}`;
@@ -110,4 +146,62 @@ export const getGroupLedger = cache(async (groupId: string): Promise<GroupLedger
     throw payments.error;
   }
   return { version: version.data?.version ?? 0, debts: debts.data, payments: payments.data };
+});
+
+export const getViewerLedgers = cache(async (): Promise<GroupLedgerRows[]> => {
+  const supabase = await createClient();
+  const versions = await supabase
+    .from("group_ledger_versions")
+    .select("group_id, version")
+    .overrideTypes<InGroup<{ version: number }>[], { merge: false }>();
+  if (versions.error) {
+    throw versions.error;
+  }
+  const [groups, members, debts, payments] = await Promise.all([
+    supabase.from("groups").select("id, name, archived_at").overrideTypes<GroupRow[], { merge: false }>(),
+    readAll((from, to) =>
+      supabase
+        .from("group_members")
+        .select("group_id, user_id")
+        .order("group_id")
+        .order("user_id")
+        .range(from, to)
+        .overrideTypes<InGroup<{ user_id: string }>[], { merge: false }>(),
+    ),
+    readAll((from, to) =>
+      supabase
+        .from("group_expense_debts")
+        .select("group_id, debtor_id, creditor_id, amount_cents")
+        .order("group_id")
+        .order("debtor_id")
+        .order("creditor_id")
+        .range(from, to)
+        .overrideTypes<InGroup<ExpenseDebt>[], { merge: false }>(),
+    ),
+    readAll((from, to) =>
+      supabase
+        .from("payments")
+        .select("group_id, id, from_user_id, to_user_id, amount_cents, paid_on, created_at")
+        .is("deleted_at", null)
+        .order("id")
+        .range(from, to)
+        .overrideTypes<InGroup<LedgerPayment>[], { merge: false }>(),
+    ),
+  ]);
+  if (groups.error) {
+    throw groups.error;
+  }
+  const version = new Map(versions.data.map((row) => [row.group_id, row.version]));
+  const membersOf = byGroup(members);
+  const debtsOf = byGroup(debts);
+  const paymentsOf = byGroup(payments);
+  return groups.data.map((group) => ({
+    id: group.id,
+    name: group.name,
+    archived: group.archived_at !== null,
+    version: version.get(group.id) ?? 0,
+    memberIds: (membersOf.get(group.id) ?? []).map((member) => member.user_id),
+    debts: debtsOf.get(group.id) ?? [],
+    payments: paymentsOf.get(group.id) ?? [],
+  }));
 });

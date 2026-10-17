@@ -24,6 +24,10 @@ export const strings = {
     youOwe: "Você deve",
     youReceive: "Você recebe",
     seeBalances: "Ver saldos gerais",
+    viewCaption: {
+      simplified: "Visão simplificada",
+      full: "Visão completa",
+    },
   },
   group: {
     back: "Voltar",
@@ -79,9 +83,13 @@ export const strings = {
   },
   overall: {
     title: "Saldos gerais",
-    intro: "Soma dos seus saldos em todos os grupos, inclusive os arquivados.",
-    youOwe: "você deve",
-    owesYou: "deve a você",
+    intro: "Seus acertos em cada grupo, inclusive os arquivados. Cada pagamento vale só para o grupo dele.",
+    youOwe: "Você deve",
+    youReceive: "Você recebe",
+    you: "Você",
+    owes: "deve",
+    to: "para",
+    toYou: "para você",
     allSettled: "Tudo acertado. Ninguém deve nada.",
   },
   paymentForm: {
@@ -206,6 +214,10 @@ export const strings = {
     paymentTo: "para",
     paymentFrom: "Quem pagou",
     paymentReceiver: "Quem recebeu",
+    paymentSource: {
+      simplified: "Pelo acerto simplificado",
+      full: "Pela visão completa",
+    },
     note: "Nota",
     other: "fez uma alteração",
     paidBy: "pago por",

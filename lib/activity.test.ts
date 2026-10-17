@@ -143,3 +143,17 @@ test("a payment deletion names the deleted payment", () => {
     details: [`${formatBRL(5000)} · 16/10/2026`],
   });
 });
+
+test("a payment from a balance view names the view", () => {
+  const view = (source: unknown) =>
+    describeActivity(entry({ entity_type: "payment", after: { ...pix, source } }), nameOf).details;
+  assert.deepEqual(view("simplified"), [`${formatBRL(5000)} · 16/10/2026`, "Pelo acerto simplificado"]);
+  assert.deepEqual(view("full"), [`${formatBRL(5000)} · 16/10/2026`, "Pela visão completa"]);
+  assert.deepEqual(view(null), [`${formatBRL(5000)} · 16/10/2026`]);
+  assert.deepEqual(view("other"), [`${formatBRL(5000)} · 16/10/2026`]);
+  assert.deepEqual(
+    describeActivity(entry({ entity_type: "payment", action: "delete", before: { ...pix, source: "full" } }), nameOf)
+      .details,
+    [`${formatBRL(5000)} · 16/10/2026`, "Pela visão completa"],
+  );
+});

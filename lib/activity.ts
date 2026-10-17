@@ -112,7 +112,11 @@ function paymentParties(record: Snapshot, nameOf: NameOf): string {
 }
 
 function paymentSummary(record: Snapshot): string[] {
-  return [`${money(cents(record, "amount_cents"))} · ${day(str(record, "paid_on"))}`];
+  const source = str(record, "source");
+  return [
+    `${money(cents(record, "amount_cents"))} · ${day(str(record, "paid_on"))}`,
+    ...(source === "simplified" || source === "full" ? [text.paymentSource[source]] : []),
+  ];
 }
 
 function paymentChanges(before: Snapshot, after: Snapshot, nameOf: NameOf): string[] {

@@ -11,8 +11,8 @@ The app stores every amount as an integer number of cents.
 - **Expenses:** one person pays. The expense splits by equal parts, exact values, percent, shares or line items.
 - **Payments:** a payment records money that one member gives to another member.
 - **Balances:** the app calculates balances from expenses and payments. The app stores no balance.
-- **Smart settlement:** the Saldos tab shows the minimum list of transfers. "Marcar como pago" records one transfer as a payment.
-- **Overall balances:** the "Saldos gerais" page adds the balances of all your groups, per person.
+- **Two balance views:** the Saldos tab has two views. "Simplificada" shows the minimum list of transfers. "Completa" shows who owes whom for the expenses, after the payments. "Marcar como pago" records one line of either view as a payment.
+- **Overall balances:** the "Saldos gerais" page and the Home card show your lines in each group, in the view that you chose. Each line of an active group has "Marcar como pago".
 - **Activity history:** the Atividade tab shows every change, with the values before and after it.
 
 Production URL: <https://dividesperto.vercel.app>
@@ -74,6 +74,18 @@ The money code (`lib/money/`), the split code (`lib/expenses.ts`) and the settle
 The same code runs in the browser preview and in the server action.
 Thus the preview always shows the amounts that the app saves.
 The database checks the result. It never calculates the splits again.
+
+### Balance views
+
+The settlement ledger (`lib/settlement/ledger.ts`) replays the live expenses and payments of one group into a debt graph.
+A payment pays the debt chains between payer and receiver first. Any rest becomes a debt in the other direction.
+A person with a net of zero keeps no line: the ledger joins the debts through that person.
+"Completa" shows the edges of the graph. "Simplificada" shows the minimum transfer list and prefers a list that follows the debt chains.
+Server components run the ledger on rows that RLS returns. The ledger writes nothing.
+
+The `ds_balance_view` cookie stores the chosen view for each browser. The server reads it, so the first HTML shows the chosen view.
+"Marcar como pago" calls the `settle_line` RPC with the ledger version, which is the newest `activity_log` id of the group.
+When the version changed, the RPC refuses with "Os saldos mudaram. Atualize a página."
 
 ### Security rule
 
@@ -298,9 +310,15 @@ After that, `/api/invite` answers 404.
 
 - A member cannot leave a group, and nobody can remove a member. To fix a wrong member, archive the group and create a new one.
 - A deleted expense or payment stays in the database with `deleted_at`. The app cannot restore it.
-- Settlement happens inside one group only. "Saldos gerais" is read-only.
+- Settlement happens inside one group only. "Saldos gerais" never nets a debt in one group against a credit in another group.
 - An archived group is read-only and moves to the closed "Grupos arquivados" list on the home page.
-- The balances of an archived group still count in "Saldos gerais".
+- The lines of an archived group still count in "Saldos gerais" and on the Home card. They have no "Marcar como pago" button.
+- The Home card shows the first 5 lines only. "Saldos gerais" shows all lines.
+- The view choice is a cookie per browser. A new browser or a home screen app with its own cookie store starts with "Simplificada".
+- Any change in a group makes an open Saldos page stale, also a rename or a new member. "Marcar como pago" then asks for a refresh.
+- The app stores no allocation of payments. An edit of an old expense can move the lines that an old payment paid.
+- A "Completa" line can join two people who never shared an expense. The line follows a real debt chain through a settled person.
+- Sometimes no minimum transfer list follows the debt chains. Then a "Simplificada" payment can add a debt in the other direction to "Completa" until the people in the middle settle.
 - An expense has one payer only.
 - The settlement list is the exact minimum for up to 12 people with a balance. Above 12, it uses a greedy method.
 - The expense and payment forms need JavaScript.

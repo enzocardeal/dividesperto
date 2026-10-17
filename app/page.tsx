@@ -1,16 +1,19 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { signOut } from "@/app/auth/actions";
-import { getOverallBalances } from "@/app/balances/data";
+import { getBalanceView, getPeople, getViewerLedgers } from "@/app/balances/data";
 import { getCurrentUserId } from "@/app/groups/data";
 import { EmptyState } from "@/components/empty-state";
 import { ListSkeleton, Skeleton } from "@/components/skeleton";
-import { summarizeFor } from "@/lib/balances";
+import { ViewerLine } from "@/components/viewer-line";
+import { firstLines, viewerGroupLines, viewerTotals } from "@/lib/balances";
 import { memberCountLabel } from "@/lib/groups";
 import { formatBRL } from "@/lib/money/format";
 import { strings } from "@/lib/strings";
 import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "./logout-button";
+
+const HOME_LINE_LIMIT = 5;
 
 type GroupSummary = {
   id: string;
@@ -75,24 +78,48 @@ async function BalanceCard() {
   if (!me) {
     return null;
   }
-  const { owesCents, receivesCents } = summarizeFor(me, await getOverallBalances(me));
+  const [ledgers, people, view] = await Promise.all([getViewerLedgers(), getPeople(), getBalanceView()]);
+  const groups = viewerGroupLines(me, ledgers, view);
+  const { owesCents, receivesCents } = viewerTotals(me, groups);
+  const lines = firstLines(groups, HOME_LINE_LIMIT);
+  const names = new Map(people.map((person) => [person.id, person.display_name]));
+  const nameOf = (id: string) => names.get(id) ?? strings.activity.someone;
 
   return (
-    <Link href="/balances" className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-lg border border-neutral-200 p-4">
-      <span className="flex flex-col">
-        <span className="text-sm text-neutral-500">{strings.home.youOwe}</span>
-        <span className={`text-xl font-semibold tabular-nums ${owesCents > 0 ? "text-red-700" : ""}`}>
-          {formatBRL(owesCents)}
+    <section className="flex flex-col gap-3 rounded-lg border border-neutral-200 p-4">
+      <div className="grid grid-cols-2 gap-x-4">
+        <span className="flex flex-col">
+          <span className="text-sm text-neutral-500">{strings.home.youOwe}</span>
+          <span className={`text-xl font-semibold tabular-nums ${owesCents > 0 ? "text-red-700" : ""}`}>
+            {formatBRL(owesCents)}
+          </span>
         </span>
-      </span>
-      <span className="flex flex-col">
-        <span className="text-sm text-neutral-500">{strings.home.youReceive}</span>
-        <span className={`text-xl font-semibold tabular-nums ${receivesCents > 0 ? "text-green-700" : ""}`}>
-          {formatBRL(receivesCents)}
+        <span className="flex flex-col">
+          <span className="text-sm text-neutral-500">{strings.home.youReceive}</span>
+          <span className={`text-xl font-semibold tabular-nums ${receivesCents > 0 ? "text-green-700" : ""}`}>
+            {formatBRL(receivesCents)}
+          </span>
         </span>
-      </span>
-      <span className="col-span-2 text-sm font-medium text-neutral-600">{strings.home.seeBalances} →</span>
-    </Link>
+      </div>
+      <span className="text-sm text-neutral-500">{strings.home.viewCaption[view]}</span>
+      {lines.length > 0 && (
+        <ul className="flex flex-col gap-2">
+          {lines.map((line) => (
+            <ViewerLine
+              key={`${line.groupId}:${line.from}:${line.to}`}
+              line={line}
+              me={me}
+              otherName={nameOf(line.from === me ? line.to : line.from)}
+              view={view}
+              showGroup
+            />
+          ))}
+        </ul>
+      )}
+      <Link href="/balances" className="flex min-h-11 items-center text-sm font-medium text-neutral-600">
+        {strings.home.seeBalances} →
+      </Link>
+    </section>
   );
 }
 

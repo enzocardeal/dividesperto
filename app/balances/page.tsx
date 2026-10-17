@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { getCurrentUserId } from "@/app/groups/data";
-import { Avatar } from "@/components/avatar";
 import { BackLink } from "@/components/back-link";
+import { BalanceViewToggle } from "@/components/balance-view-toggle";
 import { EmptyState } from "@/components/empty-state";
 import { ListSkeleton } from "@/components/skeleton";
-import { groupNetsFor, summarizeFor } from "@/lib/balances";
+import { ViewerLine } from "@/components/viewer-line";
+import { viewerGroupLines, viewerTotals } from "@/lib/balances";
 import { formatBRL } from "@/lib/money/format";
 import { strings } from "@/lib/strings";
-import { getGroupNames, getGroupPairBalances, getOverallBalances, getPeople } from "./data";
+import { getBalanceView, getPeople, getViewerLedgers } from "./data";
 
 export default function OverallBalancesPage() {
   return (
@@ -25,68 +26,61 @@ export default function OverallBalancesPage() {
   );
 }
 
-function netText(netCents: number): string {
-  return netCents < 0
-    ? `${strings.overall.youOwe} ${formatBRL(-netCents)}`
-    : `${strings.overall.owesYou} ${formatBRL(netCents)}`;
-}
-
-function netClass(netCents: number): string {
-  return netCents < 0 ? "text-red-700" : "text-green-700";
-}
-
 async function OverallBalances() {
   const me = await getCurrentUserId();
   if (!me) {
     return null;
   }
-  const [overall, groupPairs, groups, people] = await Promise.all([
-    getOverallBalances(me),
-    getGroupPairBalances(me),
-    getGroupNames(),
-    getPeople(),
-  ]);
-  const { counterparties } = summarizeFor(me, overall);
-  if (counterparties.length === 0) {
-    return <EmptyState title={strings.overall.allSettled} />;
-  }
-  const byGroup = groupNetsFor(me, groupPairs);
-  const groupNames = new Map(groups.map((group) => [group.id, group.name]));
-  const persons = new Map(people.map((person) => [person.id, person]));
+  const [ledgers, people, view] = await Promise.all([getViewerLedgers(), getPeople(), getBalanceView()]);
+  const groups = viewerGroupLines(me, ledgers, view);
+  const { owesCents, receivesCents } = viewerTotals(me, groups);
+  const names = new Map(people.map((person) => [person.id, person.display_name]));
+  const nameOf = (id: string) => names.get(id) ?? strings.activity.someone;
 
   return (
-    <ul className="flex flex-col divide-y divide-neutral-100">
-      {counterparties.map(({ userId, netCents }) => {
-        const person = persons.get(userId);
-        const name = person?.display_name ?? strings.activity.someone;
-        const lines = (byGroup.get(userId) ?? [])
-          .map((line) => ({ ...line, name: groupNames.get(line.groupId) ?? "" }))
-          .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-        return (
-          <li key={userId} className="flex gap-3 py-3">
-            <Avatar name={name} url={person?.avatar_url ?? null} />
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="truncate font-medium">{name}</span>
-                <span className={`shrink-0 font-medium tabular-nums ${netClass(netCents)}`}>{netText(netCents)}</span>
-              </div>
-              <ul className="flex flex-col text-sm text-neutral-600">
+    <>
+      <BalanceViewToggle view={view} />
+      {groups.length === 0 ? (
+        <EmptyState title={strings.overall.allSettled} />
+      ) : (
+        <>
+          <p className="font-medium tabular-nums">
+            <span className={owesCents > 0 ? "text-red-700" : ""}>
+              {strings.overall.youOwe} {formatBRL(owesCents)}
+            </span>
+            {" · "}
+            <span className={receivesCents > 0 ? "text-green-700" : ""}>
+              {strings.overall.youReceive} {formatBRL(receivesCents)}
+            </span>
+          </p>
+          {groups.map(({ lines, ...group }) => (
+            <section key={group.groupId} className="flex flex-col gap-2">
+              <Link
+                href={`/groups/${group.groupId}/balances`}
+                className="flex min-h-11 min-w-0 flex-col justify-center"
+              >
+                <h2 className="truncate text-lg font-semibold">{group.name}</h2>
+                {group.archived && (
+                  <span className="text-xs font-medium uppercase tracking-wide text-amber-700">
+                    {strings.group.archivedBadge}
+                  </span>
+                )}
+              </Link>
+              <ul className="flex flex-col gap-2">
                 {lines.map((line) => (
-                  <li key={line.groupId}>
-                    <Link
-                      href={`/groups/${line.groupId}/balances`}
-                      className="flex min-h-11 items-center justify-between gap-3"
-                    >
-                      <span className="truncate">{line.name}</span>
-                      <span className="shrink-0 tabular-nums">{netText(line.netCents)}</span>
-                    </Link>
-                  </li>
+                  <ViewerLine
+                    key={`${line.from}:${line.to}`}
+                    line={{ ...group, ...line }}
+                    me={me}
+                    otherName={nameOf(line.from === me ? line.to : line.from)}
+                    view={view}
+                  />
                 ))}
               </ul>
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+            </section>
+          ))}
+        </>
+      )}
+    </>
   );
 }

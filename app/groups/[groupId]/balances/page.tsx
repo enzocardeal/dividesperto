@@ -5,6 +5,7 @@ import { getBalanceView, getGroupLedger } from "@/app/balances/data";
 import { Avatar } from "@/components/avatar";
 import { BalanceViewToggle } from "@/components/balance-view-toggle";
 import { EmptyState } from "@/components/empty-state";
+import { SettleButton } from "@/components/settle-button";
 import { ListSkeleton } from "@/components/skeleton";
 import { netStatus, type NetStatus } from "@/lib/balances";
 import { formatBRL, formatDate } from "@/lib/money/format";
@@ -13,7 +14,6 @@ import { replayLedger } from "@/lib/settlement/ledger";
 import { linesFor, viewerFirst } from "@/lib/settlement/views";
 import { strings } from "@/lib/strings";
 import { getCurrentUserId, getGroup, getGroupPeople } from "../../data";
-import { SettleButton } from "./settle-button";
 
 const STATUS_CLASS: Record<NetStatus, string> = {
   receives: "text-green-700",

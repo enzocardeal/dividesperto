@@ -28,17 +28,20 @@ Do this walkthrough on two real phones before you call a release done. Use an iP
 | 13 | Items | Choose "Itens". Add "Pizza" R$ 60,00 for A and B, and "Vinho" R$ 40,00 for B. Set the total to R$ 110,00. | A pays R$ 33,00 and B pays R$ 77,00. |
 | 14 | Edit and loading state | Open an expense, tap "Editar", change the value, tap "Salvar despesa". Then tap "Editar" again. | Grey placeholder blocks show while the page loads. The page body is never blank. The new value shows. The second edit form shows the new value. |
 | 15 | Delete expense | Open an expense, tap "Excluir despesa", then "Sim, excluir". | The expense leaves the list. The Atividade tab shows the deletion. |
-| 16 | Saldos tab | Open the Saldos tab of the group. | Each member shows "recebe" in green, "deve" in red or "em dia". "Sugestão de acerto" lists the transfers. |
-| 17 | One-tap payment | Tap "Marcar como pago" on a transfer. | The transfer leaves the list. The payment shows under "Pagamentos". |
+| 16 | Saldos tab | Open the Saldos tab of the group. | "Visão" shows "Simplificada" pressed. Each member shows "recebe" in green, "deve" in red or "em dia". "Sugestão de acerto" lists the transfers, with your lines first. |
+| 17 | One-tap payment | Tap "Marcar como pago" on a transfer. Then tap "Completa". | The transfer leaves the list. The payment shows under "Pagamentos". "Quem deve a quem" shows no line of a person who is now "em dia". |
 | 18 | Stale tap and error toast | Open the Saldos tab on both phones. Tap "Marcar como pago" on phone 1, then on phone 2 without a refresh. | Phone 2 shows a red message "Os saldos mudaram. Atualize a página." above the bottom navigation. The message closes with "✕" or after about 6 seconds. |
 | 19 | Manual payment | Tap "Registrar pagamento", fill the form, save. Then edit it, save and tap "Editar" again. Then delete it. | The payment shows, changes and leaves the list. The second edit form shows the changed value. The nets change each time. |
-| 20 | Activity | Open the Atividade tab. | Each change shows who made it, with the old and new values. |
-| 21 | Overall balances | Open a group. Tap "Saldos gerais" in the bottom navigation, then tap the back arrow "←". | The page shows the sum per person across groups, with one line per group. The back arrow goes back to the group. |
+| 20 | Activity | Open the Atividade tab. | Each change shows who made it, with the old and new values. The payment of flow 17 shows "Pelo acerto simplificado". |
+| 21 | Overall balances | Open a group. Tap "Saldos gerais" in the bottom navigation, then tap the back arrow "←". | The page shows "Você deve R$ X · Você recebe R$ Y" and one section per group with your lines. Each line of an active group has "Marcar como pago". The totals equal the sum of the lines. The back arrow goes back to the group. |
 | 22 | Archive | Open the menu "⋯", tap "Arquivar grupo". Go to Home. Then unarchive the group. | The archived group is read-only and moves to "Grupos arquivados". After "Desarquivar grupo" it is active again. |
 | 23 | Empty states | Create a new group. Open its Despesas and Saldos tabs. | "Nenhuma despesa ainda." and "Nenhum pagamento ainda." show in dashed boxes with a short hint in Portuguese. |
 | 24 | Layout | Scroll a long list. Open "Nova despesa" and "Registrar pagamento" and tap "Data". Turn the phone to landscape. | No page scrolls sideways. "Data" ends inside the screen next to "Valor" and opens the date picker without a zoom. "Nova despesa" and "Registrar pagamento" stay above the bottom navigation. No content hides behind the notch or the rounded corners. |
 | 25 | Logout | On Home, tap "Sair". | The app goes to `/login`. `/login` has no navigation. |
 | 26 | Tap feedback | Tap "Nova despesa", a group tab, "Saldos gerais" in the bottom navigation and a "Quem pagou" chip. Look at each control while your finger touches it. | While the finger touches it, the control turns lighter and a little smaller. No grey or blue box shows around it. |
+| 27 | View choice | On phone 1, tap "Completa" on the Saldos tab. Open "Saldos gerais" and Home. Reload the page. Then open the same group on phone 2. | Phone 1 shows "Completa" pressed on the Saldos tab and on "Saldos gerais", and Home shows "Visão completa", also after the reload. Phone 2 still shows "Simplificada". |
+| 28 | Home card | Open Home with open lines in two groups. Tap "Marcar como pago" on one line. | The card shows "Você deve" and "Você recebe", the view caption and at most 5 lines, each with its group name. The tapped line leaves the card and the totals change. "Ver saldos gerais →" opens "Saldos gerais". |
+| 29 | Archived lines | Archive a group that has an open line for you. Open "Saldos gerais" and Home. Then unarchive the group. | The group shows the badge "Arquivado" after the active groups. Its lines still count in the totals and have no "Marcar como pago" button. After "Desarquivar grupo" the button is back. |
 
 ## Results
 
@@ -74,6 +77,9 @@ Device and iOS version:
 - [ ] 24 Layout
 - [ ] 25 Logout
 - [ ] 26 Tap feedback
+- [ ] 27 View choice
+- [ ] 28 Home card
+- [ ] 29 Archived lines
 
 ### Android Chrome
 
@@ -105,6 +111,9 @@ Device and Android version:
 - [ ] 24 Layout
 - [ ] 25 Logout
 - [ ] 26 Tap feedback
+- [ ] 27 View choice
+- [ ] 28 Home card
+- [ ] 29 Archived lines
 
 ### Notes
 
