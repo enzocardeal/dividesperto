@@ -12,7 +12,16 @@ import {
 import { expenseGraph, payDebt, replayLedger, type ExpenseDebt, type LedgerPayment } from "./ledger.ts";
 import { simplify, type Transfer } from "./simplify.ts";
 import { bruteForceMinimum, seeded } from "./test-helpers.ts";
-import { NODE_LIMIT, chainValid, fullLines, searchChainMinimum, simplifiedLines, viewerLines } from "./views.ts";
+import {
+  NODE_LIMIT,
+  chainValid,
+  fullLines,
+  linesFor,
+  searchChainMinimum,
+  simplifiedLines,
+  viewerFirst,
+  viewerLines,
+} from "./views.ts";
 
 function debt(debtor_id: string, creditor_id: string, amount_cents: number): ExpenseDebt {
   return { debtor_id, creditor_id, amount_cents };
@@ -347,4 +356,25 @@ test("an empty graph with members has no lines in either view", () => {
   const g = createGraph(["ana", "bia"]);
   assert.deepEqual(fullLines(g), []);
   assert.deepEqual(simplifiedLines(g).transfers, []);
+});
+
+test("viewerFirst moves the lines of the viewer to the top and keeps the order", () => {
+  const lines = [
+    line("ana", "bia", 100),
+    line("caio", "duda", 200),
+    line("bia", "caio", 300),
+    line("duda", "ana", 400),
+  ];
+  assert.deepEqual(viewerFirst(lines, "caio"), [lines[1], lines[2], lines[0], lines[3]]);
+  assert.deepEqual(viewerFirst(lines, "eva"), lines);
+  assert.deepEqual(viewerFirst(lines, null), lines);
+});
+
+test("linesFor gives the full lines or the simplified transfers", () => {
+  const g = expenseGraph(["ana", "bia", "caio"], [debt("ana", "bia", 1000), debt("bia", "caio", 1000)], {
+    compress: false,
+  });
+  assert.deepEqual(linesFor(g, "full"), fullLines(g));
+  assert.deepEqual(linesFor(g, "simplified"), simplifiedLines(g).transfers);
+  assert.notDeepEqual(linesFor(g, "full"), linesFor(g, "simplified"));
 });

@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState } from "react";
-import { settleTransfer } from "@/app/groups/actions";
+import { settleLine } from "@/app/groups/actions";
 import { ErrorToast } from "@/components/error-toast";
+import type { BalanceView } from "@/lib/settlement/view";
 import { strings } from "@/lib/strings";
 
 type SettleButtonProps = {
@@ -10,11 +11,12 @@ type SettleButtonProps = {
   fromId: string;
   toId: string;
   amountCents: number;
-  expectedNetCents: number;
+  expectedVersion: number;
+  view: BalanceView;
 };
 
-export function SettleButton({ groupId, fromId, toId, amountCents, expectedNetCents }: SettleButtonProps) {
-  const [state, action, pending] = useActionState(settleTransfer, { error: null });
+export function SettleButton({ groupId, fromId, toId, amountCents, expectedVersion, view }: SettleButtonProps) {
+  const [state, action, pending] = useActionState(settleLine, { error: null });
 
   return (
     <form action={action} className="flex shrink-0 flex-col items-stretch gap-1 sm:items-end">
@@ -22,7 +24,8 @@ export function SettleButton({ groupId, fromId, toId, amountCents, expectedNetCe
       <input type="hidden" name="fromId" value={fromId} />
       <input type="hidden" name="toId" value={toId} />
       <input type="hidden" name="amountCents" value={amountCents} />
-      <input type="hidden" name="expectedNetCents" value={expectedNetCents} />
+      <input type="hidden" name="expectedVersion" value={expectedVersion} />
+      <input type="hidden" name="view" value={view} />
       <button
         type="submit"
         disabled={pending}

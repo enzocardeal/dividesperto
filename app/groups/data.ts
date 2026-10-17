@@ -39,11 +39,6 @@ export type ExpenseDetail = ExpenseSummary & {
   expense_items: ExpenseItem[];
 };
 
-export type MemberBalance = {
-  user_id: string;
-  net_cents: number;
-};
-
 export type Payment = {
   id: string;
   from_user_id: string;
@@ -151,35 +146,6 @@ export const getExpense = cache(async (groupId: string, expenseId: string): Prom
     .order("position", { referencedTable: "expense_items" })
     .maybeSingle()
     .overrideTypes<ExpenseDetail, { merge: false }>();
-  if (error) {
-    throw error;
-  }
-  return data;
-});
-
-export const getMemberBalances = cache(async (groupId: string) => {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("group_member_balances")
-    .select("user_id, net_cents")
-    .eq("group_id", groupId)
-    .overrideTypes<MemberBalance[], { merge: false }>();
-  if (error) {
-    throw error;
-  }
-  return data;
-});
-
-export const getPayments = cache(async (groupId: string) => {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("payments")
-    .select("id, from_user_id, to_user_id, amount_cents, paid_on, note")
-    .eq("group_id", groupId)
-    .is("deleted_at", null)
-    .order("paid_on", { ascending: false })
-    .order("created_at", { ascending: false })
-    .overrideTypes<Payment[], { merge: false }>();
   if (error) {
     throw error;
   }

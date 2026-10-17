@@ -1,6 +1,7 @@
 import { compareIds, compressSettled, copyGraph, edgesOf, maxFlowReduce, netsOf, type DebtGraph } from "./graph.ts";
 import { COMPRESS_SETTLED } from "./ledger.ts";
 import { EXACT_LIMIT, simplify, type Transfer } from "./simplify.ts";
+import type { BalanceView } from "./view.ts";
 
 export const NODE_LIMIT = 5000;
 
@@ -26,6 +27,11 @@ export function fullLines(g: DebtGraph): Transfer[] {
 
 export function viewerLines(lines: readonly Transfer[], viewerId: string): Transfer[] {
   return lines.filter((line) => line.from === viewerId || line.to === viewerId);
+}
+
+export function viewerFirst(lines: readonly Transfer[], viewerId: string | null): Transfer[] {
+  const involves = (line: Transfer) => line.from === viewerId || line.to === viewerId;
+  return [...lines.filter(involves), ...lines.filter((line) => !involves(line))];
 }
 
 export function chainValid(
@@ -127,4 +133,8 @@ export function simplifiedLines(g: DebtGraph, options: ChainSearchOptions = {}):
   }
   const found = searchChainMinimum(g, best.length, options).transfers;
   return found ? { transfers: found, followsChains: true } : { transfers: best, followsChains: false };
+}
+
+export function linesFor(g: DebtGraph, view: BalanceView): Transfer[] {
+  return view === "full" ? fullLines(g) : simplifiedLines(g).transfers;
 }

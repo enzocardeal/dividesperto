@@ -1,14 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { getBalanceView, getGroupLedger } from "@/app/balances/data";
 import { Avatar } from "@/components/avatar";
+import { BalanceViewToggle } from "@/components/balance-view-toggle";
 import { EmptyState } from "@/components/empty-state";
 import { ListSkeleton } from "@/components/skeleton";
 import { netStatus, type NetStatus } from "@/lib/balances";
 import { formatBRL, formatDate } from "@/lib/money/format";
-import { simplify } from "@/lib/settlement/simplify";
+import { netsOf } from "@/lib/settlement/graph";
+import { replayLedger } from "@/lib/settlement/ledger";
+import { linesFor, viewerFirst } from "@/lib/settlement/views";
 import { strings } from "@/lib/strings";
-import { getCurrentUserId, getGroup, getGroupPeople, getMemberBalances, getPayments } from "../../data";
+import { getCurrentUserId, getGroup, getGroupPeople } from "../../data";
 import { SettleButton } from "./settle-button";
 
 const STATUS_CLASS: Record<NetStatus, string> = {
@@ -35,21 +39,23 @@ async function Balances({ params }: Pick<PageProps<"/groups/[groupId]/balances">
   if (!group) {
     notFound();
   }
-  const [balances, payments, { members }, me] = await Promise.all([
-    getMemberBalances(group.id),
-    getPayments(group.id),
+  const [{ version, debts, payments }, { members }, me, view] = await Promise.all([
+    getGroupLedger(group.id),
     getGroupPeople(group.id),
     getCurrentUserId(),
+    getBalanceView(),
   ]);
-  const nets = new Map(balances.map((balance) => [balance.user_id, balance.net_cents]));
+  const graph = replayLedger(members.map((person) => person.id), debts, payments);
+  const nets = new Map(netsOf(graph).map((net) => [net.userId, net.netCents]));
   const names = new Map(members.map((person) => [person.id, person.display_name]));
   const nameOf = (id: string) => names.get(id) ?? strings.activity.someone;
   const archived = group.archived_at !== null;
-  const transfers = simplify(balances.map((balance) => ({ userId: balance.user_id, netCents: balance.net_cents })));
+  const lines = viewerFirst(linesFor(graph, view), me);
 
   return (
     <>
       {archived && <p className="text-sm text-neutral-600">{strings.group.archivedNote}</p>}
+      <BalanceViewToggle view={view} />
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">{strings.balances.title}</h2>
         <ul className="flex flex-col divide-y divide-neutral-100">
@@ -71,28 +77,32 @@ async function Balances({ params }: Pick<PageProps<"/groups/[groupId]/balances">
         </ul>
       </section>
       <section className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold">{strings.settlement.title}</h2>
-        {transfers.length === 0 ? (
+        <h2 className="text-lg font-semibold">
+          {view === "full" ? strings.settlement.fullTitle : strings.settlement.title}
+        </h2>
+        {lines.length === 0 ? (
           <EmptyState title={strings.settlement.allSettled} />
         ) : (
           <ul className="flex flex-col gap-2">
-            {transfers.map((transfer) => (
+            {lines.map((line) => (
               <li
-                key={`${transfer.from}:${transfer.to}`}
+                key={`${line.from}:${line.to}`}
                 className="flex flex-col gap-2 rounded-lg border border-neutral-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <span className="min-w-0">
-                  <span className="font-medium">{nameOf(transfer.from)}</span> {strings.settlement.pays}{" "}
-                  <span className="font-medium tabular-nums">{formatBRL(transfer.amountCents)}</span>{" "}
-                  {strings.settlement.to} <span className="font-medium">{nameOf(transfer.to)}</span>
+                  <span className="font-medium">{nameOf(line.from)}</span>{" "}
+                  {view === "full" ? strings.settlement.owes : strings.settlement.pays}{" "}
+                  <span className="font-medium tabular-nums">{formatBRL(line.amountCents)}</span>{" "}
+                  {strings.settlement.to} <span className="font-medium">{nameOf(line.to)}</span>
                 </span>
                 {!archived && (
                   <SettleButton
                     groupId={group.id}
-                    fromId={transfer.from}
-                    toId={transfer.to}
-                    amountCents={transfer.amountCents}
-                    expectedNetCents={nets.get(transfer.from) ?? 0}
+                    fromId={line.from}
+                    toId={line.to}
+                    amountCents={line.amountCents}
+                    expectedVersion={version}
+                    view={view}
                   />
                 )}
               </li>

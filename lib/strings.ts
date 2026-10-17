@@ -58,9 +58,20 @@ export const strings = {
     noPaymentsHint: "Toque em “Registrar pagamento” quando alguém pagar outra pessoa.",
     paidTo: "pagou para",
   },
+  balanceView: {
+    label: "Visão",
+    simplified: "Simplificada",
+    full: "Completa",
+    hints: {
+      simplified: "O menor número de pagamentos para acertar o grupo.",
+      full: "Quem deve a quem pelas despesas, já descontando os pagamentos.",
+    },
+  },
   settlement: {
     title: "Sugestão de acerto",
+    fullTitle: "Quem deve a quem",
     pays: "paga",
+    owes: "deve",
     to: "para",
     markPaid: "Marcar como pago",
     marking: "Registrando…",
