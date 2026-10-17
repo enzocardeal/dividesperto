@@ -7,6 +7,8 @@ import type { ExpensePayload } from "../lib/expenses.ts";
 import { loginErrorFor } from "../lib/login-error.ts";
 import { todayInSaoPaulo } from "../lib/money/format.ts";
 import type { PaymentPayload } from "../lib/payments.ts";
+import { compareIds, netsOf } from "../lib/settlement/graph.ts";
+import { replayLedger } from "../lib/settlement/ledger.ts";
 
 type Stack = { API_URL: string; ANON_KEY: string; SERVICE_ROLE_KEY: string };
 type User = { id: string; email: string; client: SupabaseClient };
@@ -124,6 +126,8 @@ const READS: Read[] = [
   { name: "group_member_balances", run: (c) => c.from("group_member_balances").select("*").eq("group_id", groupId) },
   { name: "group_pair_balances", run: (c) => c.from("group_pair_balances").select("*").eq("group_id", groupId) },
   { name: "overall_pair_balances", run: (c) => c.from("overall_pair_balances").select("*") },
+  { name: "group_expense_debts", run: (c) => c.from("group_expense_debts").select("*").eq("group_id", groupId) },
+  { name: "group_ledger_versions", run: (c) => c.from("group_ledger_versions").select("*").eq("group_id", groupId) },
 ];
 
 const TARGETS: Target[] = [
@@ -210,6 +214,18 @@ const GROUP_RPCS: Call[] = [
       p_expected_from_net_cents: -5700,
     }),
   },
+  {
+    name: "settle_line",
+    fn: "settle_line",
+    args: () => ({
+      p_group_id: groupId,
+      p_from: owner.id,
+      p_to: member.id,
+      p_amount_cents: 100,
+      p_expected_version: 0,
+      p_view: "simplified",
+    }),
+  },
 ];
 
 const AUTHENTICATED_RPCS: Call[] = [
@@ -244,6 +260,11 @@ async function memberNet(): Promise<number> {
     .eq("group_id", groupId)
     .eq("user_id", member.id);
   return Number(ok(await query, "group_member_balances")[0]?.net_cents);
+}
+
+async function ledgerVersion(): Promise<number> {
+  const query = member.client.from("group_ledger_versions").select("version").eq("group_id", groupId);
+  return Number(ok(await query, "group_ledger_versions")[0]?.version);
 }
 
 before(async () => {
@@ -366,6 +387,49 @@ test("settle_transfer refuses a stale expected net and accepts the current one",
   refused(stale, "DS009", /balances changed/, "settle_transfer with a stale net");
   ok(await member.client.rpc("settle_transfer", { ...args, p_expected_from_net_cents: net }), "settle_transfer");
   assert.equal(await memberNet(), 0);
+});
+
+test("settle_line refuses a stale version and an unknown view, and records the view", async () => {
+  const args = { p_group_id: groupId, p_from: member.id, p_to: owner.id, p_amount_cents: 1000 };
+  for (const view of ["simplified", "full"]) {
+    const version = await ledgerVersion();
+    assert.ok(version > 0, `version ${version} is not positive`);
+    const stale = await member.client.rpc("settle_line", { ...args, p_expected_version: version - 1, p_view: view });
+    refused(stale, "DS009", /balances changed/, `settle_line (${view}) with a stale version`);
+    const unknown = await member.client.rpc("settle_line", { ...args, p_expected_version: version, p_view: "other" });
+    refused(unknown, "DS007", /unknown balance view/, "settle_line with an unknown view");
+
+    const id = ok(await member.client.rpc("settle_line", { ...args, p_expected_version: version, p_view: view }), view);
+    assert.ok((await ledgerVersion()) > version, `the version did not grow after settle_line (${view})`);
+    const payment = ok(await member.client.from("payments").select("source").eq("id", id), "payment")[0];
+    assert.equal(payment?.source, view);
+    const rows = ok(await member.client.from("activity_log").select("*").eq("entity_id", id), "activity of the payment");
+    assert.equal(rows.length, 1, `settle_line (${view}) wrote ${rows.length} activity rows`);
+    assert.equal(rows[0].entity_type, "payment");
+    assert.equal(rows[0].action, "create");
+    assert.equal(rows[0].after.source, view);
+  }
+});
+
+test("the replayed ledger gives every member the net of group_member_balances", async () => {
+  const members = ok(await member.client.from("group_members").select("user_id").eq("group_id", groupId), "members");
+  const debts = ok(await member.client.from("group_expense_debts").select("*").eq("group_id", groupId), "debts");
+  const payments = member.client
+    .from("payments")
+    .select("id, from_user_id, to_user_id, amount_cents, paid_on, created_at")
+    .eq("group_id", groupId)
+    .is("deleted_at", null);
+  const graph = replayLedger(
+    members.map((m) => m.user_id),
+    debts.map((d) => ({ ...d, amount_cents: Number(d.amount_cents) })),
+    ok(await payments, "payments").map((p) => ({ ...p, amount_cents: Number(p.amount_cents) })),
+  );
+  const balances = member.client.from("group_member_balances").select("user_id, net_cents").eq("group_id", groupId);
+  const expected = ok(await balances, "group_member_balances")
+    .map((b) => ({ userId: b.user_id, netCents: Number(b.net_cents) }))
+    .sort((a, b) => compareIds(a.userId, b.userId));
+  assert.ok(expected.some((b) => b.netCents !== 0), "the bridge test needs a group with an open balance");
+  assert.deepEqual(netsOf(graph), expected);
 });
 
 test("an archived group refuses every write RPC", async () => {

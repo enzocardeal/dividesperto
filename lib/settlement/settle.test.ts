@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { strings } from "../strings.ts";
-import { buildSettleArgs, settleErrorMessage } from "./settle.ts";
+import { buildSettleArgs, buildSettleLineArgs, settleErrorMessage } from "./settle.ts";
 
 const group = "7a1c2e3f-4b5d-4e6f-8a9b-0c1d2e3f4a50";
 const ana = "0b6f3a52-4d1e-4c55-9a51-0d8c1e1f0a01";
@@ -53,6 +53,52 @@ test("buildSettleArgs refuses tampered fields", () => {
   }
 });
 
+const line = {
+  groupId: group,
+  fromId: bia,
+  toId: ana,
+  amountCents: "5000",
+  expectedVersion: "42",
+  view: "full",
+};
+
+test("buildSettleLineArgs builds the settle_line arguments from the form", () => {
+  assert.deepEqual(buildSettleLineArgs(form(line)), {
+    p_group_id: group,
+    p_from: bia,
+    p_to: ana,
+    p_amount_cents: 5000,
+    p_expected_version: 42,
+    p_view: "full",
+  });
+  assert.equal(buildSettleLineArgs(form({ ...line, expectedVersion: "0" }))?.p_expected_version, 0);
+  assert.equal(buildSettleLineArgs(form({ ...line, view: "simplified" }))?.p_view, "simplified");
+});
+
+test("buildSettleLineArgs refuses tampered fields", () => {
+  const cases: Record<string, string>[] = [
+    { ...line, groupId: "x" },
+    { ...line, fromId: "" },
+    { ...line, toId: bia },
+    { ...line, amountCents: "0" },
+    { ...line, amountCents: "-5" },
+    { ...line, amountCents: "50,00" },
+    { ...line, amountCents: "99999999999999999999" },
+    { ...line, expectedVersion: "" },
+    { ...line, expectedVersion: "-1" },
+    { ...line, expectedVersion: "4.2" },
+    { ...line, view: "" },
+    { ...line, view: "other" },
+    { ...line, view: "Full" },
+  ];
+  for (const fields of cases) {
+    assert.equal(buildSettleLineArgs(form(fields)), null, JSON.stringify(fields));
+  }
+  const withoutView = form(line);
+  withoutView.delete("view");
+  assert.equal(buildSettleLineArgs(withoutView), null);
+});
+
 test("settleErrorMessage maps known SQLSTATEs and falls back to the generic text", () => {
   assert.equal(settleErrorMessage("42501"), strings.errors.notMember);
   assert.equal(settleErrorMessage("DS002"), strings.errors.archived);
@@ -62,11 +108,13 @@ test("settleErrorMessage maps known SQLSTATEs and falls back to the generic text
   assert.equal(settleErrorMessage(undefined), strings.errors.generic);
 });
 
-test("the settlement migration raises every SQLSTATE that settleErrorMessage maps", () => {
-  const sql = readFileSync(new URL("../../supabase/migrations/0006_settle_transfer.sql", import.meta.url), "utf8");
-  const raised = new Set([...sql.matchAll(/errcode = '([0-9A-Z]{5})'/g)].map((match) => match[1]));
-  assert.deepEqual([...raised].sort(), ["42501", "DS002", "DS007", "DS009"]);
-  for (const code of raised) {
-    assert.notEqual(settleErrorMessage(code), strings.errors.generic);
-  }
-});
+for (const migration of ["0006_settle_transfer.sql", "0007_balance_views.sql"]) {
+  test(`${migration} raises every SQLSTATE that settleErrorMessage maps`, () => {
+    const sql = readFileSync(new URL(`../../supabase/migrations/${migration}`, import.meta.url), "utf8");
+    const raised = new Set([...sql.matchAll(/errcode = '([0-9A-Z]{5})'/g)].map((match) => match[1]));
+    assert.deepEqual([...raised].sort(), ["42501", "DS002", "DS007", "DS009"]);
+    for (const code of raised) {
+      assert.notEqual(settleErrorMessage(code), strings.errors.generic);
+    }
+  });
+}

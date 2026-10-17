@@ -1,5 +1,6 @@
 import { isUuid } from "../groups.ts";
 import { strings } from "../strings.ts";
+import type { BalanceView } from "./view.ts";
 
 export type SettleArgs = {
   p_group_id: string;
@@ -7,6 +8,15 @@ export type SettleArgs = {
   p_to: string;
   p_amount_cents: number;
   p_expected_from_net_cents: number;
+};
+
+export type SettleLineArgs = {
+  p_group_id: string;
+  p_from: string;
+  p_to: string;
+  p_amount_cents: number;
+  p_expected_version: number;
+  p_view: BalanceView;
 };
 
 const INTEGER_PATTERN = /^-?\d+$/;
@@ -18,7 +28,7 @@ const RPC_ERRORS = new Map<string | undefined, string>([
   ["DS009", strings.errors.balancesChanged],
 ]);
 
-function parseCents(value: FormDataEntryValue | null): number | null {
+function parseInteger(value: FormDataEntryValue | null): number | null {
   if (typeof value !== "string" || !INTEGER_PATTERN.test(value)) {
     return null;
   }
@@ -30,8 +40,8 @@ export function buildSettleArgs(form: FormData): SettleArgs | null {
   const groupId = form.get("groupId");
   const fromId = form.get("fromId");
   const toId = form.get("toId");
-  const amountCents = parseCents(form.get("amountCents"));
-  const expectedNetCents = parseCents(form.get("expectedNetCents"));
+  const amountCents = parseInteger(form.get("amountCents"));
+  const expectedNetCents = parseInteger(form.get("expectedNetCents"));
   if (!isUuid(groupId) || !isUuid(fromId) || !isUuid(toId) || fromId === toId) {
     return null;
   }
@@ -44,6 +54,32 @@ export function buildSettleArgs(form: FormData): SettleArgs | null {
     p_to: toId,
     p_amount_cents: amountCents,
     p_expected_from_net_cents: expectedNetCents,
+  };
+}
+
+export function buildSettleLineArgs(form: FormData): SettleLineArgs | null {
+  const groupId = form.get("groupId");
+  const fromId = form.get("fromId");
+  const toId = form.get("toId");
+  const amountCents = parseInteger(form.get("amountCents"));
+  const expectedVersion = parseInteger(form.get("expectedVersion"));
+  const view = form.get("view");
+  if (!isUuid(groupId) || !isUuid(fromId) || !isUuid(toId) || fromId === toId) {
+    return null;
+  }
+  if (amountCents === null || amountCents <= 0 || expectedVersion === null || expectedVersion < 0) {
+    return null;
+  }
+  if (view !== "simplified" && view !== "full") {
+    return null;
+  }
+  return {
+    p_group_id: groupId,
+    p_from: fromId,
+    p_to: toId,
+    p_amount_cents: amountCents,
+    p_expected_version: expectedVersion,
+    p_view: view,
   };
 }
 
