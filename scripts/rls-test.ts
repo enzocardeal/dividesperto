@@ -124,8 +124,6 @@ const READS: Read[] = [
   { name: "payments", run: (c) => c.from("payments").select("*").eq("group_id", groupId) },
   { name: "activity_log", run: (c) => c.from("activity_log").select("*").eq("group_id", groupId).order("id") },
   { name: "group_member_balances", run: (c) => c.from("group_member_balances").select("*").eq("group_id", groupId) },
-  { name: "group_pair_balances", run: (c) => c.from("group_pair_balances").select("*").eq("group_id", groupId) },
-  { name: "overall_pair_balances", run: (c) => c.from("overall_pair_balances").select("*") },
   { name: "group_expense_debts", run: (c) => c.from("group_expense_debts").select("*").eq("group_id", groupId) },
   { name: "group_ledger_versions", run: (c) => c.from("group_ledger_versions").select("*").eq("group_id", groupId) },
 ];
@@ -204,17 +202,6 @@ const GROUP_RPCS: Call[] = [
   { name: "save_payment (edit)", fn: "save_payment", args: () => ({ p_payment: paymentPayload({ id: paymentId }) }) },
   { name: "delete_payment", fn: "delete_payment", args: () => ({ p_payment_id: paymentId }) },
   {
-    name: "settle_transfer",
-    fn: "settle_transfer",
-    args: () => ({
-      p_group_id: groupId,
-      p_from: member.id,
-      p_to: owner.id,
-      p_amount_cents: 5700,
-      p_expected_from_net_cents: -5700,
-    }),
-  },
-  {
     name: "settle_line",
     fn: "settle_line",
     args: () => ({
@@ -251,15 +238,6 @@ async function snapshot(): Promise<unknown[]> {
   const invites = admin.from("invited_emails").select("email").like("email", `%-${run}@rls.test`).order("email");
   rows.push(ok(await invites, "invited_emails"));
   return rows;
-}
-
-async function memberNet(): Promise<number> {
-  const query = member.client
-    .from("group_member_balances")
-    .select("net_cents")
-    .eq("group_id", groupId)
-    .eq("user_id", member.id);
-  return Number(ok(await query, "group_member_balances")[0]?.net_cents);
 }
 
 async function ledgerVersion(): Promise<number> {
@@ -377,16 +355,6 @@ test("save_expense refuses splits that do not sum to the amount", async () => {
   ];
   const result = await member.client.rpc("save_expense", { p_expense: expensePayload({ id: expenseId, splits }) });
   refused(result, "DS005", /splits sum to/, "save_expense with a 1-cent gap");
-});
-
-test("settle_transfer refuses a stale expected net and accepts the current one", async () => {
-  const net = await memberNet();
-  assert.equal(net, -5700);
-  const args = { p_group_id: groupId, p_from: member.id, p_to: owner.id, p_amount_cents: 5700 };
-  const stale = await member.client.rpc("settle_transfer", { ...args, p_expected_from_net_cents: net + 1 });
-  refused(stale, "DS009", /balances changed/, "settle_transfer with a stale net");
-  ok(await member.client.rpc("settle_transfer", { ...args, p_expected_from_net_cents: net }), "settle_transfer");
-  assert.equal(await memberNet(), 0);
 });
 
 test("settle_line refuses a stale version and an unknown view, and records the view", async () => {

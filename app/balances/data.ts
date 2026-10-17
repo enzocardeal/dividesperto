@@ -1,15 +1,10 @@
 import { cookies } from "next/headers";
 import { cache } from "react";
 import type { Payment, Person } from "@/app/groups/data";
-import type { GroupLedgerRows, GroupPairBalance, PairBalance } from "@/lib/balances";
+import type { GroupLedgerRows } from "@/lib/balances";
 import type { ExpenseDebt, LedgerPayment } from "@/lib/settlement/ledger";
 import { BALANCE_VIEW_COOKIE, parseBalanceView, type BalanceView } from "@/lib/settlement/view";
 import { createClient } from "@/lib/supabase/server";
-
-export type GroupName = {
-  id: string;
-  name: string;
-};
 
 export type LedgerPaymentRow = Payment & LedgerPayment & { source: BalanceView | null };
 
@@ -54,48 +49,6 @@ function byGroup<T extends { group_id: string }>(rows: readonly T[]): Map<string
   }
   return groups;
 }
-
-function involving(userId: string): string {
-  return `debtor_id.eq.${userId},creditor_id.eq.${userId}`;
-}
-
-export const getOverallBalances = cache(async (userId: string) => {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("overall_pair_balances")
-    .select("debtor_id, creditor_id, amount_cents")
-    .or(involving(userId))
-    .overrideTypes<PairBalance[], { merge: false }>();
-  if (error) {
-    throw error;
-  }
-  return data;
-});
-
-export const getGroupPairBalances = cache(async (userId: string) => {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("group_pair_balances")
-    .select("group_id, debtor_id, creditor_id, amount_cents")
-    .or(involving(userId))
-    .overrideTypes<GroupPairBalance[], { merge: false }>();
-  if (error) {
-    throw error;
-  }
-  return data;
-});
-
-export const getGroupNames = cache(async () => {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("groups")
-    .select("id, name")
-    .overrideTypes<GroupName[], { merge: false }>();
-  if (error) {
-    throw error;
-  }
-  return data;
-});
 
 export const getPeople = cache(async () => {
   const supabase = await createClient();

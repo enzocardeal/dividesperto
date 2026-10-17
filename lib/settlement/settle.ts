@@ -2,14 +2,6 @@ import { isUuid } from "../groups.ts";
 import { strings } from "../strings.ts";
 import type { BalanceView } from "./view.ts";
 
-export type SettleArgs = {
-  p_group_id: string;
-  p_from: string;
-  p_to: string;
-  p_amount_cents: number;
-  p_expected_from_net_cents: number;
-};
-
 export type SettleLineArgs = {
   p_group_id: string;
   p_from: string;
@@ -34,27 +26,6 @@ function parseInteger(value: FormDataEntryValue | null): number | null {
   }
   const cents = Number(value);
   return Number.isSafeInteger(cents) ? cents : null;
-}
-
-export function buildSettleArgs(form: FormData): SettleArgs | null {
-  const groupId = form.get("groupId");
-  const fromId = form.get("fromId");
-  const toId = form.get("toId");
-  const amountCents = parseInteger(form.get("amountCents"));
-  const expectedNetCents = parseInteger(form.get("expectedNetCents"));
-  if (!isUuid(groupId) || !isUuid(fromId) || !isUuid(toId) || fromId === toId) {
-    return null;
-  }
-  if (amountCents === null || amountCents <= 0 || expectedNetCents === null) {
-    return null;
-  }
-  return {
-    p_group_id: groupId,
-    p_from: fromId,
-    p_to: toId,
-    p_amount_cents: amountCents,
-    p_expected_from_net_cents: expectedNetCents,
-  };
 }
 
 export function buildSettleLineArgs(form: FormData): SettleLineArgs | null {

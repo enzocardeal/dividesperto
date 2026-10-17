@@ -224,7 +224,7 @@ CI runs `typecheck`, the unit tests and the RLS test.
 
 ## Database changes
 
-Migrations are in `supabase/migrations/`. Each file name starts with a 4-digit number, for example `0006_settle_transfer.sql`.
+Migrations are in `supabase/migrations/`. Each file name starts with a 4-digit number, for example `0007_balance_views.sql`.
 
 - Never edit a migration that the production database has. Add a new migration.
 - Vercel deploys each push to `main` immediately. Thus push the migration to Supabase immediately after the git push.
