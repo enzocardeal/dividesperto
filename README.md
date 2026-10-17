@@ -71,8 +71,9 @@ In this README, an RPC is a Postgres function that the app calls with `supabase.
 
 `lib/` holds pure TypeScript with no database access.
 The money code (`lib/money/`), the split code (`lib/expenses.ts`) and the settlement code (`lib/settlement/`) are there.
-The same code runs in the browser preview and in the server action.
+The money and split code runs in the browser preview and in the server action.
 Thus the preview always shows the amounts that the app saves.
+The settlement code runs only in server components, on the rows that RLS returns.
 The database checks the result. It never calculates the splits again.
 
 ### Balance views
@@ -200,6 +201,12 @@ Stop the stack and delete its data.
 
 ```sh
 supabase stop --no-backup
+```
+
+On Podman, the stop command can leave a container running. Stop it by hand, then run the stop command again.
+
+```sh
+docker ps --filter name=_dividesperto -q | xargs docker stop
 ```
 
 On Podman, also delete the volumes that remain.
