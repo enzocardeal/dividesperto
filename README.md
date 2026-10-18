@@ -2,7 +2,7 @@
 
 ## What the app does
 
-dividesperto is an expense splitting app for a closed group of friends.
+dividesperto is an expense splitting app.
 The interface is in Brazilian Portuguese (pt-BR) and every amount is in BRL.
 The app stores every amount as an integer number of cents.
 
